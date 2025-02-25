@@ -175,7 +175,7 @@ const PlaceOrder = () => {
               <div className='bg-secondary bg-opacity-10 p-4 rounded-lg text-secondary'>
                 <p><strong>Ngân hàng:</strong> Vietcombank</p>
                 <p><strong>Số tài khoản:</strong> 1234567890</p>
-                <p><strong>Chủ tài khoản:</strong> Bacala Books</p>
+                <p><strong>Chủ tài khoản:</strong> BookZen Books</p>
                 <p><strong>Số tiền:</strong> {currency}{orderInfo.amount.toLocaleString('vi-VN')}</p>
                 <p><strong>Nội dung chuyển khoản:</strong> Thanh toan don hang #{orderInfo.orderId}</p>
                 <div className='mt-3 text-sm'>
@@ -253,7 +253,7 @@ const PlaceOrder = () => {
                   <div className='space-y-2 text-sm'>
                     <p><span className='font-medium'>Ngân hàng:</span> Vietcombank</p>
                     <p><span className='font-medium'>Số tài khoản:</span> 1234567890</p>
-                    <p><span className='font-medium'>Chủ tài khoản:</span> Bacala Books</p>
+                    <p><span className='font-medium'>Chủ tài khoản:</span> BookZen Books</p>
                     <p className='text-xs text-gray-500 mt-2'>Chi tiết thanh toán sẽ được hiển thị sau khi đặt hàng.</p>
                   </div>
                 </div>

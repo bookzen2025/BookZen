@@ -50,7 +50,7 @@ const Header = () => {
                 {/* logo */}
                 <Link to={'/'} className='flex-1 flex items-center justify-start'>
                     <img src={logo} alt="" height={36} width={36} className='hidden sm:flex mr-2' />
-                    <h4 className='bold-24'>Bacala</h4>
+                    <h4 className='bold-24'>BookZen</h4>
                 </Link>
                 {/* Navbar */}
                 <div className='flex-1'>

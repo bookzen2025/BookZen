@@ -484,7 +484,7 @@ export const FOOTER_LINKS = [
     title: "Contact Us",
     links: [
       { label: "Contact Number", value: "123-456-7890" },
-      { label: "Email Address", value: "info@bacala.com" },
+      { label: "Email Address", value: "info@BookZen.com" },
     ],
   };
   

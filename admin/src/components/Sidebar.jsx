@@ -13,7 +13,7 @@ const Sidebar = ({setToken}) => {
                 {/* logo */}
                 <Link to={'/'} className='bold-24 flex items-baseline sm:pl-12'>
                     <img src={logo} alt="logoImg" height={24} width={24} />
-                    <span className='text-secondary pl-2 sm:hidden lg:flex'>Bacala</span>
+                    <span className='text-secondary pl-2 sm:hidden lg:flex'>BookZen</span>
                 </Link>
                 <div className='flex sm:flex-col gap-x-5 gap-y-8 sm:pt-10'>
                     <NavLink to={'/'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>

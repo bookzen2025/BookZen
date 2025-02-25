@@ -74,7 +74,7 @@ const Verify = () => {
                 <div className='space-y-2 text-sm'>
                   <p><span className='font-medium'>Ngân hàng:</span> Vietcombank</p>
                   <p><span className='font-medium'>Số tài khoản:</span> 1234567890</p>
-                  <p><span className='font-medium'>Chủ tài khoản:</span> Bacala Books</p>
+                  <p><span className='font-medium'>Chủ tài khoản:</span> BookZen Books</p>
                   <p><span className='font-medium'>Nội dung chuyển khoản:</span> Thanh toan don hang #{orderId}</p>
                   <p className="text-sm text-gray-500 mt-2">Vui lòng thanh toán đúng số tiền và nội dung để đơn hàng được xử lý nhanh chóng</p>
                 </div>

@@ -17,7 +17,7 @@ const Footer = () => {
             {/* logo */}
             <Link to={'/'} className='flex-1 flex items-center justify-start'>
               <img src={logo} alt="" height={36} width={36} className='hidden sm:flex mr-2' />
-              <h4 className='bold-24'>Bacala</h4>
+              <h4 className='bold-24'>BookZen</h4>
             </Link>
             <p className='py-4'>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Nulla recusandae voluptatibus excepturi nostrum cum delectus repellat?</p>
             <div className='flexBetween pl-3 h-[3rem] bg-primary w-full max-w-[333px] rounded-full ring-1 ring-slate-500/5 mb-4'>
@@ -57,7 +57,7 @@ const Footer = () => {
         </div>
       </div>
       {/* copyrights */}
-      <p className='text-white bg-tertiary medium-14 py-2 px-8 rounded flexBetween '><span>2025 Bacala</span><span>All rights reserved</span></p>
+      <p className='text-white bg-tertiary medium-14 py-2 px-8 rounded flexBetween '><span>2025 BookZen</span><span>All rights reserved</span></p>
     </footer>
   )
 }
