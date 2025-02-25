@@ -84,7 +84,7 @@ const BookDetail = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                <h3 className="text-3xl font-bold text-secondaryOne">{currency}{book.price}.00</h3>
+              <h3 className="text-3xl font-bold text-secondaryOne">{currency}{book.price.toLocaleString('vi-VN')}</h3>
                 <button
                   onClick={() => addToCart(book._id)}
                   className="btn-secondaryOne flex items-center gap-2 hover:shadow-md transition-shadow duration-300"

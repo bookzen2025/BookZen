@@ -3,7 +3,7 @@ import userModel from "../models/userModel.js"
 
 // Global variables for payment
 const currency = 'usd'
-const deliveryCharges = 5
+const deliveryCharges = 120000
 
 // Place order using Cash on Delivery
 const placeOrder = async (req, res) => {

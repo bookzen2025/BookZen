@@ -193,7 +193,7 @@ const Dashboard = ({ token }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard 
               title="Total Revenue" 
-              value={`${currency}${stats.totalRevenue.toLocaleString()}`} 
+              value={`${currency}${stats.totalRevenue.toLocaleString('vi-VN')}`}
               icon={<IoStatsChart className="text-white text-xl" />}
               color="bg-secondary"
             />
@@ -242,7 +242,7 @@ const Dashboard = ({ token }) => {
                     </div>
                     <h4 className="font-bold">{item.method}</h4>
                     <p className="text-sm text-gray-500">{item.count} orders</p>
-                    <p className="font-medium">{currency}{item.amount}</p>
+                    <p className="font-medium">{currency}{item.amount.toLocaleString('vi-VN')}</p>
                   </div>
                 ))}
               </div>
@@ -267,7 +267,7 @@ const Dashboard = ({ token }) => {
                       <tr key={index} className="border-b">
                         <td className="py-2">{product.name}</td>
                         <td className="text-right py-2">{product.sales}</td>
-                        <td className="text-right py-2">{currency}{product.revenue}</td>
+                        <td className="text-right py-2">{currency}{product.revenue.toLocaleString('vi-VN')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -292,7 +292,7 @@ const Dashboard = ({ token }) => {
                       <tr key={index} className="border-b">
                         <td className="py-2">{new Date(order.date).toLocaleDateString()}</td>
                         <td className="text-right py-2">{order.items}</td>
-                        <td className="text-right py-2">{currency}{order.amount}</td>
+                        <td className="text-right py-2">{currency}{order.amount.toLocaleString('vi-VN')}</td>
                         <td className="text-right py-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             order.status === 'Delivered' ? 'bg-green-100 text-green-800' :

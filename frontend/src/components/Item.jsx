@@ -25,7 +25,7 @@ const Item = ({book}) => {
                 </div>
                 <div className='flexBetween pt-1'>
                     <p className='font-bold capitalize'>{book.category}</p>
-                    <h5 className='h5 text-secondaryOne pr-2'>{currency}{book.price}.00</h5>
+                    <h5 className='h5 text-secondaryOne pr-2'>{currency}{book.price.toLocaleString('vi-VN')}</h5>
                 </div>
                 <p className='line-clamp-2 py-1'>{book.description}</p>
             </div>

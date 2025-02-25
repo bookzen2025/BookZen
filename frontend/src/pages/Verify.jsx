@@ -70,13 +70,13 @@ const Verify = () => {
           ) : (
             <>
               <div className='mb-6 p-4 bg-primary rounded-lg'>
-                <h3 className='font-medium mb-2'>Payment Instructions</h3>
+                <h3 className='font-medium mb-2'>Thông tin thanh toán</h3>
                 <div className='space-y-2 text-sm'>
-                  <p><span className='font-medium'>Bank Name:</span> ABC Bank</p>
-                  <p><span className='font-medium'>Account Number:</span> 1234-5678-9012-3456</p>
-                  <p><span className='font-medium'>Account Holder:</span> Bacala Books</p>
-                  <p><span className='font-medium'>SWIFT/BIC:</span> ABCDEFG123</p>
-                  <p><span className='font-medium'>Reference:</span> {orderId}</p>
+                  <p><span className='font-medium'>Ngân hàng:</span> Vietcombank</p>
+                  <p><span className='font-medium'>Số tài khoản:</span> 1234567890</p>
+                  <p><span className='font-medium'>Chủ tài khoản:</span> Bacala Books</p>
+                  <p><span className='font-medium'>Nội dung chuyển khoản:</span> Thanh toan don hang #{orderId}</p>
+                  <p className="text-sm text-gray-500 mt-2">Vui lòng thanh toán đúng số tiền và nội dung để đơn hàng được xử lý nhanh chóng</p>
                 </div>
               </div>
             

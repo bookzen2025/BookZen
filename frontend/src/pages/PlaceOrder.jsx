@@ -142,18 +142,18 @@ const PlaceOrder = () => {
                 {orderInfo.items.map((item, index) => (
                   <div key={index} className='flex justify-between border-b pb-2 mb-2'>
                     <span>{item.name} x {item.quantity}</span>
-                    <span>{currency}{item.price * item.quantity}</span>
+                    <span>{currency}{(item.price * item.quantity).toLocaleString('vi-VN')}</span>
                   </div>
                 ))}
                 
                 <div className='flex justify-between border-b pb-2 mb-2'>
                   <span>Phí vận chuyển</span>
-                  <span>{currency}{delivery_charges}</span>
+                  <span>{currency}{delivery_charges.toLocaleString('vi-VN')}</span>
                 </div>
                 
                 <div className='flex justify-between font-bold'>
                   <span>Tổng cộng</span>
-                  <span>{currency}{orderInfo.amount}</span>
+                  <span>{currency}{orderInfo.amount.toLocaleString('vi-VN')}</span>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ const PlaceOrder = () => {
                 <p><strong>Ngân hàng:</strong> Vietcombank</p>
                 <p><strong>Số tài khoản:</strong> 1234567890</p>
                 <p><strong>Chủ tài khoản:</strong> Bacala Books</p>
-                <p><strong>Số tiền:</strong> {currency}{orderInfo.amount}</p>
+                <p><strong>Số tiền:</strong> {currency}{orderInfo.amount.toLocaleString('vi-VN')}</p>
                 <p><strong>Nội dung chuyển khoản:</strong> Thanh toan don hang #{orderInfo.orderId}</p>
                 <div className='mt-3 text-sm'>
                   <p>Lưu ý: Vui lòng hoàn tất thanh toán trong vòng 24 giờ. Đơn hàng của bạn sẽ được xử lý sau khi chúng tôi nhận được thanh toán.</p>
@@ -247,10 +247,11 @@ const PlaceOrder = () => {
               
               {/* Bank transfer information preview */}
               {method === 'bank' && (
+                // Cập nhật thông tin ngân hàng ở dòng 119-125
                 <div className='mt-4 p-4 bg-white rounded-lg shadow-sm'>
                   <h4 className='font-medium mb-2'>Thông tin chuyển khoản</h4>
                   <div className='space-y-2 text-sm'>
-                    <p><span className='font-medium'>Tên ngân hàng:</span> Vietcombank</p>
+                    <p><span className='font-medium'>Ngân hàng:</span> Vietcombank</p>
                     <p><span className='font-medium'>Số tài khoản:</span> 1234567890</p>
                     <p><span className='font-medium'>Chủ tài khoản:</span> Bacala Books</p>
                     <p className='text-xs text-gray-500 mt-2'>Chi tiết thanh toán sẽ được hiển thị sau khi đặt hàng.</p>
