@@ -1,7 +1,7 @@
 import React from 'react'
 import { FaSquarePlus } from "react-icons/fa6"
 import { FaListAlt } from "react-icons/fa"
-import { MdFactCheck } from "react-icons/md"
+import { MdFactCheck, MdDashboard } from "react-icons/md"
 import { BiLogOut } from "react-icons/bi"
 import logo from "../assets/logo.png"
 import { Link, NavLink } from 'react-router-dom'
@@ -17,6 +17,10 @@ const Sidebar = ({setToken}) => {
                 </Link>
                 <div className='flex sm:flex-col gap-x-5 gap-y-8 sm:pt-10'>
                     <NavLink to={'/'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
+                        <MdDashboard />
+                        <div className='hidden lg:flex'>Dashboard</div>
+                    </NavLink>
+                    <NavLink to={'/add'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <FaSquarePlus />
                         <div className='hidden lg:flex'>Add Item</div>
                     </NavLink>

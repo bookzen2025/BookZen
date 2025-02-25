@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import Add from './pages/Add'
 import List from './pages/List'
 import Orders from './pages/Orders'
+import Dashboard from './pages/Dashboard'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Login from './components/Login'
@@ -29,7 +30,8 @@ const App = () => {
           <div className='mx-auto max-w-[1440px] flex flex-col sm:flex-row'>
             <Sidebar setToken={setToken}/>
             <Routes>
-              <Route path='/' element={<Add token={token}/>} />
+              <Route path='/' element={<Dashboard token={token}/>} />
+              <Route path='/add' element={<Add token={token}/>} />
               <Route path='/list' element={<List token={token}/>} />
               <Route path='/orders' element={<Orders token={token}/>} />
             </Routes>

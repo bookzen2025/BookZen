@@ -1,14 +1,9 @@
 import orderModel from "../models/orderModel.js"
 import userModel from "../models/userModel.js"
-import Stripe from "stripe"
 
 // Global variables for payment
-const currency = 'pkr'
-const deliveryCharges = 10
-
-// Stripe gateway initialize
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-
+const currency = 'usd'
+const deliveryCharges = 5
 
 // Place order using Cash on Delivery
 const placeOrder = async (req, res) => {
@@ -37,81 +32,53 @@ const placeOrder = async (req, res) => {
     }
 }
 
-
-// Place order using Stripe payment method
-const placeOrderStripe = async (req, res) => {
+// Place order using Bank Transfer
+const placeBankTransfer = async (req, res) => {
     try {
         const { userId, items, amount, address } = req.body
-        const { origin } = req.headers
 
         const orderData = {
             userId,
             items,
             amount,
             address,
-            paymentMethod: "Stripe",
+            paymentMethod: "Bank Transfer",
             payment: false,
             date: Date.now()
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()
 
-        const line_items = items.map((item) => ({
-            price_data: {
-                currency: currency,
-                product_data: {
-                    name: item.name
-                },
-                unit_amount: item.price * 100 * 277 // converting into pkr
-            },
-            quantity: item.quantity
-        }))
-
-        line_items.push({
-            price_data: {
-                currency: currency,
-                product_data: {
-                    name: 'Delivery charges'
-                },
-                unit_amount: deliveryCharges * 100 * 277 // converting into pkr 
-            },
-            quantity: 1
+        // Return the order data without clearing cart (cart will be cleared after payment confirmation)
+        res.json({ 
+            success: true, 
+            message: "Đặt hàng thành công. Vui lòng hoàn tất thanh toán chuyển khoản.",
+            orderId: newOrder._id
         })
-
-        const session = await stripe.checkout.sessions.create({
-            success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
-            cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
-            line_items,
-            mode: 'payment'
-        })
-        res.json({ success: true, session_url: session.url })
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
     }
 }
 
-
-// Verify Stripe Method
-const verifyStripe = async (req, res) => {
-    const { orderId, success, userId } = req.body
+// Mark bank transfer as completed
+const markBankTransferComplete = async (req, res) => {
+    const { orderId, userId } = req.body
     try {
-        if (success === "true") {
-            await orderModel.findByIdAndUpdate(orderId, { payment: true })
-            await userModel.findByIdAndUpdate(userId, { cartData: {} })
-            res.json({ success: true })
-        } else {
-            await orderModel.findOneAndDelete(orderId)
-            res.json({ success: false })
-        }
-
+        await orderModel.findByIdAndUpdate(orderId, { 
+            payment: true,
+            status: 'Order placed' // Thay đổi từ 'Đang xử lý' thành 'Order placed'
+        })
+        
+        // Clear cart after payment confirmation
+        await userModel.findByIdAndUpdate(userId, { cartData: {} })
+        
+        res.json({ success: true, message: "Cảm ơn bạn đã xác nhận thanh toán. Đơn hàng của bạn đang được xử lý." })
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
-
     }
 }
-
 
 // All orders data for Admin Panel
 const allOrders = async (req, res) => {
@@ -123,7 +90,6 @@ const allOrders = async (req, res) => {
         res.json({ success: false, message: error.message })
     }
 }
-
 
 // All orders data for Frontend
 const userOrders = async (req, res) => {
@@ -137,7 +103,6 @@ const userOrders = async (req, res) => {
     }
 }
 
-
 // Updating order status for Admin Panel
 const UpdateStatus = async (req, res) => {
     try {
@@ -148,8 +113,7 @@ const UpdateStatus = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
-
     }
 }
 
-export { placeOrder, placeOrderStripe, allOrders, userOrders, verifyStripe, UpdateStatus }
+export { placeOrder, placeBankTransfer, allOrders, userOrders, markBankTransferComplete, UpdateStatus }
