@@ -6,10 +6,14 @@ const productSchema = new mongoose.Schema({
     category: {type:String, required:true},
     image: {type:String, required:true},
     price: {type:Number, required:true},
+    author: {type:String},
+    publisher: {type:String},
+    publishedYear: {type:Number},
+    pages: {type:Number},
     date: {type:Number, required:true},
     popular: {type:Boolean},
-})
+});
 
-const productModel = mongoose.models.product || mongoose.model('product', productSchema)
+const productModel = mongoose.models.product || mongoose.model('product', productSchema);
 
-export default productModel
+export default productModel;

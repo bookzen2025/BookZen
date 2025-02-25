@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
 import upload_icon from "../assets/upload_icon.png"
-import { TbTrash } from "react-icons/tb"
-import { FaPlus } from "react-icons/fa6"
 import axios from "axios"
 import { backend_url } from '../App'
 import { toast } from 'react-toastify'
@@ -14,6 +12,12 @@ const Add = ({ token }) => {
   const [price, setPrice] = useState('')
   const [category, setCategory] = useState('Fiction')
   const [popular, setPopular] = useState(false)
+  
+  // Các trường thông tin sách
+  const [author, setAuthor] = useState('')
+  const [publisher, setPublisher] = useState('')
+  const [publishedYear, setPublishedYear] = useState('')
+  const [pages, setPages] = useState('')
 
   const handleChangeImage = (e) => {
     setImage(e.target.files[0])
@@ -28,8 +32,14 @@ const Add = ({ token }) => {
       formData.append("description", description)
       formData.append("price", price)
       formData.append("category", category)
-      formData.append("popular", popular) // Boolean
+      formData.append("popular", popular)
       formData.append("image", image)
+      
+      // Thêm các trường thông tin sách
+      formData.append("author", author)
+      formData.append("publisher", publisher)
+      formData.append("publishedYear", publishedYear)
+      formData.append("pages", pages)
 
       const response = await axios.post(`${backend_url}/api/product/create`, formData, { headers: { token } })
       if (response.data.success) {
@@ -39,6 +49,10 @@ const Add = ({ token }) => {
         setPrice('')
         setImage(null)
         setPopular(false)
+        setAuthor('')
+        setPublisher('')
+        setPublishedYear('')
+        setPages('')
       } else {
         toast.error(response.data.message)
       }
@@ -56,11 +70,18 @@ const Add = ({ token }) => {
           <h5 className='h5'>Product Name</h5>
           <input onChange={(e) => setName(e.target.value)} value={name} type="text" placeholder='Write here..' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
         </div>
+        
+        <div className='w-full'>
+          <h5 className='h5'>Author</h5>
+          <input onChange={(e) => setAuthor(e.target.value)} value={author} type="text" placeholder='Author Name' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
+        </div>
+        
         <div className='w-full'>
           <h5 className='h5'>Product description</h5>
           <textarea onChange={(e) => setDescription(e.target.value)} value={description} type="text" rows={5} placeholder='Write here..' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
         </div>
-        <div className='flex items-end gap-x-6'>
+        
+        <div className='flex flex-wrap gap-x-6 gap-y-3'>
           {/* categories */}
           <div>
             <h5 className='h5'>Category</h5>
@@ -73,6 +94,7 @@ const Add = ({ token }) => {
               <option value="Religious">Religious</option>
             </select>
           </div>
+          
           <div className='flex gap-x-2 pt-2'>
             <label htmlFor="image">
               <img src={image ? URL.createObjectURL(image) : upload_icon} alt="" className='w-14 h-14 aspect-square object-cover ring-1 ring-slate-900/5 bg-white rounded-lg' />
@@ -80,10 +102,29 @@ const Add = ({ token }) => {
             </label>
           </div>
         </div>
-        <div>
-          <h5 className='h5'>Price</h5>
-          <input onChange={(e) => setPrice(e.target.value)} value={price} type="number" placeholder='Price' min={0} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-20' />
+        
+        <div className='flex flex-wrap gap-x-6 gap-y-3'>
+          <div>
+            <h5 className='h5'>Price</h5>
+            <input onChange={(e) => setPrice(e.target.value)} value={price} type="number" placeholder='Price' min={0} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-20' />
+          </div>
+          
+          <div>
+            <h5 className='h5'>Published Year</h5>
+            <input onChange={(e) => setPublishedYear(e.target.value)} value={publishedYear} type="number" placeholder='Year' min={1800} max={2025} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-24' />
+          </div>
+          
+          <div>
+            <h5 className='h5'>Pages</h5>
+            <input onChange={(e) => setPages(e.target.value)} value={pages} type="number" placeholder='Pages' min={1} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-20' />
+          </div>
         </div>
+        
+        <div className='w-full'>
+          <h5 className='h5'>Publisher</h5>
+          <input onChange={(e) => setPublisher(e.target.value)} value={publisher} type="text" placeholder='Publisher Name' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
+        </div>
+        
         <div className='flexStart gap-2 my-2'>
           <input onChange={(e) => setPopular((prev) => !prev)} type="checkbox" checked={popular} id='popular' />
           <label htmlFor="popular" className='cursor-pointer'>Add to popular</label>
