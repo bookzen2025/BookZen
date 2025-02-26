@@ -12,6 +12,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import Orders from './pages/Orders'
 import Verify from './pages/Verify'
 import BookDetail from './pages/BookDetail'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 const App = () => {
   return (
@@ -28,6 +30,8 @@ const App = () => {
         <Route path='/orders' element={<Orders />} />
         <Route path='/verify' element={<Verify />} />
         <Route path='/book/:id' element={<BookDetail />} />
+        <Route path='/forgot-password' element={<ForgotPassword />} />
+        <Route path='/reset-password' element={<ResetPassword />} />
       </Routes>
     </main>
   )

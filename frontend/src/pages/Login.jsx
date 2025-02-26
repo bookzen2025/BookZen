@@ -82,7 +82,12 @@ const Login = () => {
             </div>
             <button type='submit' className='btn-dark w-full mt-5 !py-[7px] !rounded'>{currState === "Sign Up" ? 'Sign Up' : 'Login'}</button>
             <div className='w-full flex flex-col gap-y-3 medium-14'>
-              <div className='underline'>Forgot your password?</div>
+              <div 
+                onClick={() => navigate('/forgot-password')} 
+                className='underline cursor-pointer hover:text-secondaryOne'
+              >
+                Quên mật khẩu?
+              </div>
               {currState === 'Login' ? (
                 <div className='underline'>Don't have an account? <span onClick={() => setCurrState('Sign Up')} className='cursor-pointer hover:text-secondaryOne'>Create account</span></div>
               ) : (
