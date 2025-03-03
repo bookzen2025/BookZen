@@ -1,28 +1,31 @@
+// src/components/Header.jsx - ENTIRE UPDATED FILE
 import React, { useContext, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 import Navbar from './Navbar'
 import { CgMenuLeft } from "react-icons/cg"
 import { TbUserCircle } from "react-icons/tb"
 import { RiUserLine, RiShoppingBag4Line } from "react-icons/ri"
+import { BiLogOut } from "react-icons/bi"
 import { ShopContext } from '../context/ShopContext'
-
+import { useAuth } from '../hooks/useAuth'
 
 const Header = () => {
-
-    const { navigate, token, setToken, getCartCount, setCartItems } = useContext(ShopContext)
+    const { getCartCount } = useContext(ShopContext)
+    const { user, isAuthenticated, logoutUser, loading } = useAuth()
+    const navigate = useNavigate()
     const [active, setActive] = useState(false)
     const [menuOpened, setMenuOpened] = useState(false)
+    const [loggingOut, setLoggingOut] = useState(false)
 
     const toggleMenu = () => {
         setMenuOpened((prev) => !prev)
     }
 
-    const logout = ()=>{
-        navigate('/login')
-        localStorage.removeItem('token')
-        setToken('')
-        setCartItems({})
+    const handleLogout = async () => {
+        setLoggingOut(true)
+        await logoutUser()
+        setLoggingOut(false)
     }
 
     useEffect(() => {
@@ -42,7 +45,6 @@ const Header = () => {
             window.removeEventListener("scroll", handleScroll)
         }
     }, [menuOpened])
-
 
     return (
         <header className='fixed top-0 w-full left-0 right-0 z-50'>
@@ -65,16 +67,38 @@ const Header = () => {
                     </Link>
                     <div className='relative group'>
                         <div className=''>
-                            {token ? (
-                                <div><TbUserCircle className='text-[29px] cursor-pointer' /></div>
+                            {isAuthenticated ? (
+                                <div className="flex items-center">
+                                    <div className="mr-2 text-sm hidden md:block">
+                                        {user?.name || "User"}
+                                    </div>
+                                    <TbUserCircle className='text-[29px] cursor-pointer' />
+                                </div>
                             ) : (
-                                <button onClick={()=> navigate('/login')} className='btn-outline flexCenter gap-x-2'>Login<RiUserLine /></button>
+                                <button onClick={()=> navigate('/login')} className='btn-outline flexCenter gap-x-2'>
+                                    {loading ? (
+                                        <div className="h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                                    ) : 'Login'}
+                                    <RiUserLine />
+                                </button>
                             )}
                         </div>
-                        {token && <>
+                        {isAuthenticated && <>
                             <ul className='bg-white p-1 w-32 ring-1 ring-slate-900/5 rounded absolute right-0 top-7 hidden group-hover:flex flex-col regular-14 shadow-md'>
                                 <li onClick={()=> navigate('/orders')} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer'>Orders</li>
-                                <li onClick={logout} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer'>Logout</li>
+                                <li onClick={handleLogout} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer flex items-center'>
+                                    {loggingOut ? (
+                                        <>
+                                            <div className="h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                                            Logging out...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <BiLogOut className="mr-1" />
+                                            Logout
+                                        </>
+                                    )}
+                                </li>
                             </ul>
                         </>}
                     </div>

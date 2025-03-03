@@ -1,40 +1,75 @@
-import React, { useContext, useState } from 'react'
+// src/pages/PlaceOrder.jsx - ENTIRE UPDATED FILE
+import React, { useContext, useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
 import Title from '../components/Title'
 import CartTotal from '../components/CartTotal'
 import Footer from '../components/Footer'
 import { ShopContext } from '../context/ShopContext'
+import { useAuth } from '../hooks/useAuth'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 
+// Create schema for shipping address validation
+const shippingSchema = yup.object().shape({
+  firstName: yup.string().required('First name is required'),
+  lastName: yup.string().required('Last name is required'),
+  email: yup.string().required('Email is required').email('Please enter a valid email'),
+  street: yup.string().required('Street address is required'),
+  city: yup.string().required('City is required'),
+  state: yup.string().required('State/Province is required'),
+  zipcode: yup.string().required('ZIP/Postal code is required'),
+  country: yup.string().required('Country is required'),
+  phone: yup.string()
+    .required('Phone number is required')
+    .matches(/^[0-9+\s-]{8,15}$/, 'Please enter a valid phone number')
+});
+
 const PlaceOrder = () => {
   const { books, navigate, token, cartItems, setCartItems, getCartAmount, delivery_charges, backendUrl, currency } = useContext(ShopContext)
+  const { isAuthenticated, user } = useAuth()
   const [method, setMethod] = useState('cod')
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    street: '',
-    city: '',
-    state: '',
-    zipcode: '',
-    country: 'Việt Nam',
-    phone: '',
-  })
-  
-  // Trạng thái mới để theo dõi quá trình thanh toán
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderInfo, setOrderInfo] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Set up form with React Hook Form
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm({
+    resolver: yupResolver(shippingSchema),
+    defaultValues: {
+      country: 'Việt Nam',
+    }
+  });
 
-  const onChangeHandler = (e) => {
-    const name = e.target.name;
-    const value = e.target.value
+  // Pre-fill form with user data if available
+  useEffect(() => {
+    if (user?.email) {
+      setValue('email', user.email);
+      // If we had more user details in our auth context, we could pre-fill more fields
+    }
+  }, [user, setValue]);
+  
+  // Redirect if not authenticated or cart is empty
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.info("Please login to proceed to checkout", {
+        position: "top-center"
+      });
+      navigate('/login');
+      return;
+    }
+    
+    const hasItems = Object.values(cartItems).some(qty => qty > 0);
+    if (!hasItems) {
+      toast.info("Your cart is empty", {
+        position: "top-center"
+      });
+      navigate('/cart');
+    }
+  }, [isAuthenticated, cartItems, navigate]);
 
-    setFormData(data => ({ ...data, [name]: value }))
-  }
-
-  const onSubmitHandler = async (event) => {
-    event.preventDefault() // prevents page reload
+  const onSubmitHandler = async (formData) => {
     setIsSubmitting(true)
     
     try {
@@ -61,7 +96,13 @@ const PlaceOrder = () => {
       switch (method) {
         // api for COD method
         case 'cod':
-          const response = await axios.post(backendUrl + '/api/order/place', orderData, { headers: { token } })
+          const response = await axios.post(backendUrl + '/api/order/place', orderData, { 
+            headers: { 
+              token,
+              'x-csrf-token': localStorage.getItem('csrfToken'),
+              'csrf-token': localStorage.getItem('csrfToken')
+            } 
+          })
           if (response.data.success) {
             setCartItems({})
             toast.success("Đặt hàng thành công!")
@@ -73,7 +114,13 @@ const PlaceOrder = () => {
 
         // api for bank transfer method
         case 'bank':
-          const responseBankTransfer = await axios.post(backendUrl + '/api/order/bank-transfer', orderData, { headers: { token } })
+          const responseBankTransfer = await axios.post(backendUrl + '/api/order/bank-transfer', orderData, { 
+            headers: { 
+              token,
+              'x-csrf-token': localStorage.getItem('csrfToken'),
+              'csrf-token': localStorage.getItem('csrfToken')
+            } 
+          })
           if (responseBankTransfer.data.success) {
             // Lưu thông tin đơn hàng và hiển thị màn hình thanh toán
             setOrderInfo({
@@ -88,6 +135,7 @@ const PlaceOrder = () => {
           }
           break
         default:
+          toast.error("Invalid payment method")
           break;
       }
     } catch (error) {
@@ -104,7 +152,13 @@ const PlaceOrder = () => {
       const response = await axios.post(
         backendUrl + '/api/order/complete-bank-transfer',
         { orderId: orderInfo.orderId, userId: token },
-        { headers: { token } }
+        { 
+          headers: { 
+            token,
+            'x-csrf-token': localStorage.getItem('csrfToken'),
+            'csrf-token': localStorage.getItem('csrfToken')
+          } 
+        }
       )
       
       if (response.data.success) {
@@ -188,17 +242,22 @@ const PlaceOrder = () => {
             <div className='flex gap-4 justify-center'>
               <button 
                 onClick={() => setOrderPlaced(false)} 
-                className='px-6 py-2 border border-gray-300 rounded-full text-sm font-medium'
+                className='px-6 py-2 border border-gray-300 rounded-full text-sm font-medium bg-white hover:bg-gray-50 transition-colors'
                 disabled={isSubmitting}
               >
                 Quay lại
               </button>
               <button 
                 onClick={confirmPayment} 
-                className='btn-secondary'
+                className='btn-secondary transition-all duration-300 hover:shadow-md'
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đã thanh toán'}
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Đang xử lý...
+                  </div>
+                ) : 'Xác nhận đã thanh toán'}
               </button>
             </div>
           </div>
@@ -212,25 +271,124 @@ const PlaceOrder = () => {
   return (
     <section className='max-padd-container'>
       {/* Container */}
-      <form onSubmit={onSubmitHandler} className='pt-28'>
+      <form onSubmit={handleSubmit(onSubmitHandler)} className='pt-28'>
         <div className='flex flex-col xl:flex-row gap-20 xl:gap-28'>
           {/* Left Side */}
           <div className='flex flex-1 flex-col gap-3 text-[95%]'>
             <Title title1={'Thông tin'} title2={'giao hàng'} title1Styles={'h3'} />
             <div className='flex gap-3'>
-              <input onChange={onChangeHandler} value={formData.firstName} type="text" name='firstName' placeholder='Tên' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none w-1/2' required />
-              <input onChange={onChangeHandler} value={formData.lastName} type="text" name='lastName' placeholder='Họ' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none w-1/2' required />
+              <div className="w-1/2">
+                <input 
+                  {...register('firstName')} 
+                  type="text" 
+                  placeholder='Tên' 
+                  className={`ring-1 ${errors.firstName ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                  aria-invalid={errors.firstName ? "true" : "false"}
+                />
+                {errors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>
+                )}
+              </div>
+              <div className="w-1/2">
+                <input 
+                  {...register('lastName')} 
+                  type="text" 
+                  placeholder='Họ' 
+                  className={`ring-1 ${errors.lastName ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                  aria-invalid={errors.lastName ? "true" : "false"}
+                />
+                {errors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>
+                )}
+              </div>
             </div>
-            <input onChange={onChangeHandler} value={formData.email} type="email" name='email' placeholder='Email' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none' required />
-            <input onChange={onChangeHandler} value={formData.phone} type="text" name='phone' placeholder='Số điện thoại' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none' required />
-            <input onChange={onChangeHandler} value={formData.street} type="text" name='street' placeholder='Địa chỉ' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none' required />
-            <div className='flex gap-3'>
-              <input onChange={onChangeHandler} value={formData.city} type="text" name='city' placeholder='Thành phố' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none w-1/2' required />
-              <input onChange={onChangeHandler} value={formData.state} type="text" name='state' placeholder='Tỉnh/Thành' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none w-1/2' required />
+            <div>
+              <input 
+                {...register('email')} 
+                type="email" 
+                placeholder='Email' 
+                className={`ring-1 ${errors.email ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                aria-invalid={errors.email ? "true" : "false"}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+              )}
+            </div>
+            <div>
+              <input 
+                {...register('phone')} 
+                type="text" 
+                placeholder='Số điện thoại' 
+                className={`ring-1 ${errors.phone ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                aria-invalid={errors.phone ? "true" : "false"}
+              />
+              {errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+              )}
+            </div>
+            <div>
+              <input 
+                {...register('street')} 
+                type="text" 
+                placeholder='Địa chỉ' 
+                className={`ring-1 ${errors.street ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                aria-invalid={errors.street ? "true" : "false"}
+              />
+              {errors.street && (
+                <p className="text-red-500 text-xs mt-1">{errors.street.message}</p>
+              )}
             </div>
             <div className='flex gap-3'>
-              <input onChange={onChangeHandler} value={formData.zipcode} type="text" name='zipcode' placeholder='Mã bưu điện' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none w-1/2' required />
-              <input onChange={onChangeHandler} value={formData.country} type="text" name='country' placeholder='Quốc gia' className='ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-primary outline-none w-1/2' required />
+              <div className="w-1/2">
+                <input 
+                  {...register('city')} 
+                  type="text" 
+                  placeholder='Thành phố' 
+                  className={`ring-1 ${errors.city ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                  aria-invalid={errors.city ? "true" : "false"}
+                />
+                {errors.city && (
+                  <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>
+                )}
+              </div>
+              <div className="w-1/2">
+                <input 
+                  {...register('state')} 
+                  type="text" 
+                  placeholder='Tỉnh/Thành' 
+                  className={`ring-1 ${errors.state ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                  aria-invalid={errors.state ? "true" : "false"}
+                />
+                {errors.state && (
+                  <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>
+                )}
+              </div>
+            </div>
+            <div className='flex gap-3'>
+              <div className="w-1/2">
+                <input 
+                  {...register('zipcode')} 
+                  type="text" 
+                  placeholder='Mã bưu điện' 
+                  className={`ring-1 ${errors.zipcode ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                  aria-invalid={errors.zipcode ? "true" : "false"}
+                />
+                {errors.zipcode && (
+                  <p className="text-red-500 text-xs mt-1">{errors.zipcode.message}</p>
+                )}
+              </div>
+              <div className="w-1/2">
+                <input 
+                  {...register('country')} 
+                  type="text" 
+                  placeholder='Quốc gia' 
+                  className={`ring-1 ${errors.country ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                  aria-invalid={errors.country ? "true" : "false"}
+                />
+                {errors.country && (
+                  <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -241,13 +399,24 @@ const PlaceOrder = () => {
             <div className='my-6'>
               <h3 className='bold-20 mb-5'>Phương thức <span className='text-secondary'>thanh toán</span></h3>
               <div className='flex gap-3'>
-                <div onClick={() => setMethod('bank')} className={`${method === 'bank' ? "btn-secondary" : "btn-white"} !py-1 text-xs cursor-pointer`}>Chuyển khoản</div>
-                <div onClick={() => setMethod('cod')} className={`${method === 'cod' ? "btn-secondary" : "btn-white"} !py-1 text-xs cursor-pointer`}>Thanh toán khi nhận hàng</div>
+                <button
+                  type="button"
+                  onClick={() => setMethod('bank')} 
+                  className={`${method === 'bank' ? "btn-secondary" : "btn-white"} !py-1 text-xs cursor-pointer transition-colors`}
+                >
+                  Chuyển khoản
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod('cod')} 
+                  className={`${method === 'cod' ? "btn-secondary" : "btn-white"} !py-1 text-xs cursor-pointer transition-colors`}
+                >
+                  Thanh toán khi nhận hàng
+                </button>
               </div>
               
               {/* Bank transfer information preview */}
               {method === 'bank' && (
-                // Cập nhật thông tin ngân hàng ở dòng 119-125
                 <div className='mt-4 p-4 bg-white rounded-lg shadow-sm'>
                   <h4 className='font-medium mb-2'>Thông tin chuyển khoản</h4>
                   <div className='space-y-2 text-sm'>
@@ -262,10 +431,15 @@ const PlaceOrder = () => {
             <div>
               <button 
                 type='submit' 
-                className='btn-secondaryOne' 
+                className='btn-secondaryOne transition-all duration-300 hover:shadow-md flex items-center justify-center' 
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Đang xử lý...' : 'Đặt hàng'}
+                {isSubmitting ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Đang xử lý...
+                  </>
+                ) : 'Đặt hàng'}
               </button>
             </div>
           </div>

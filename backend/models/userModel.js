@@ -1,3 +1,4 @@
+// userModel.js - ENTIRE UPDATED FILE
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -7,6 +8,8 @@ const userSchema = new mongoose.Schema({
     cartData:{type:Object, default:{}},
     resetPasswordToken:{type:String},
     resetPasswordExpires:{type:Date},
+    refreshToken:{type:String},
+    refreshTokenExpires:{type:Date},
 }, {minimize:false})
 
 const userModel = mongoose.models.user || mongoose.model('user', userSchema)
