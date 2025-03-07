@@ -18,7 +18,7 @@ const Cart = () => {
     
     const handleProceedToCheckout = () => {
         if (!isAuthenticated) {
-            toast.info("Please login to continue to checkout", {
+            toast.info("Vui lòng đăng nhập để tiếp tục thanh toán", {
                 position: "top-center",
                 autoClose: 5000
             })
@@ -27,7 +27,7 @@ const Cart = () => {
         }
         
         if (getCartAmount() === 0) {
-            toast.info("Your cart is empty", {
+            toast.info("Giỏ hàng của bạn trống", {
                 position: "top-center"
             })
             return
@@ -40,7 +40,7 @@ const Cart = () => {
         // Add simple validation
         if (newQuantity < 0) newQuantity = 0
         if (newQuantity > 99) {
-            toast.warn("Maximum quantity is 99")
+            toast.warn("Số lượng tối đa là 99")
             newQuantity = 99
         }
         
@@ -51,7 +51,7 @@ const Cart = () => {
         <section className='max-padd-container'>
             <div className='pt-28'>
                 {/* Title */}
-                <Title title1={'Cart'} title2={'List'} title1Styles={'h3'} />
+                <Title title1={'Giỏ'} title2={'hàng'} title1Styles={'h3'} />
                 
                 {/* Empty Cart Message */}
                 {itemCount === 0 && (
@@ -59,10 +59,10 @@ const Cart = () => {
                         <div className="text-6xl mb-4 text-gray-300 flex justify-center">
                             <TbTrash />
                         </div>
-                        <h3 className="text-xl font-medium mb-2">Your cart is empty</h3>
-                        <p className="text-gray-500 mb-6">Looks like you haven't added any books to your cart yet.</p>
+                        <h3 className="text-xl font-medium mb-2">Giỏ hàng của bạn trống</h3>
+                        <p className="text-gray-500 mb-6">Có vẻ như bạn chưa thêm sách nào vào giỏ hàng.</p>
                         <button onClick={() => navigate('/shop')} className="btn-secondaryOne">
-                            Browse Books
+                            Tiếp tục mua sắm
                         </button>
                     </div>
                 )}
@@ -86,7 +86,7 @@ const Cart = () => {
                                                         <button 
                                                             onClick={() => handleUpdateQuantity(item._id, cartItems[item._id] - 1)} 
                                                             className='p-1.5 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors'
-                                                            aria-label="Decrease quantity"
+                                                            aria-label="Giảm số lượng"
                                                         >
                                                             <FaMinus className='text-xs' />
                                                         </button>
@@ -94,7 +94,7 @@ const Cart = () => {
                                                         <button 
                                                             onClick={() => handleUpdateQuantity(item._id, cartItems[item._id] + 1)} 
                                                             className='p-1.5 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors'
-                                                            aria-label="Increase quantity"
+                                                            aria-label="Tăng số lượng"
                                                         >
                                                             <FaPlus className='text-xs' />
                                                         </button>
@@ -104,7 +104,7 @@ const Cart = () => {
                                                 <button 
                                                     onClick={() => handleUpdateQuantity(item._id, 0)} 
                                                     className='cursor-pointer text-xl text-secondary hover:text-red-500 transition-colors p-1'
-                                                    aria-label="Remove item"
+                                                    aria-label="Xóa sản phẩm"
                                                 >
                                                     <TbTrash />
                                                 </button>
@@ -127,7 +127,7 @@ const Cart = () => {
                                 onClick={handleProceedToCheckout} 
                                 className='btn-secondaryOne mt-7 transition-all duration-300 hover:shadow-md'
                             >
-                                Proceed to Checkout
+                                Tiến hành đặt hàng
                             </button>
                         </div>
                     </div>

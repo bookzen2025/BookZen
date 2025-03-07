@@ -18,6 +18,7 @@ const ShopContextProvider = (props) => {
     const [refreshToken, setRefreshToken] = useState("")
     const [user, setUser] = useState(null)
     const [cartItems, setCartItems] = useState({})
+    const [wishlistItems, setWishlistItems] = useState([])
     const [loading, setLoading] = useState(false)
     const [authError, setAuthError] = useState(null)
 
@@ -207,6 +208,10 @@ const ShopContextProvider = (props) => {
         }
         setCartItems(cartData)
 
+        // Tìm thông tin sách để hiển thị tên trong thông báo
+        const bookInfo = books.find((book) => book._id === itemId)
+        const bookName = bookInfo ? bookInfo.name : 'Sách'
+
         if (token) {
             try {
                 await axios.post(backendUrl + '/api/cart/add', { itemId }, { 
@@ -216,11 +221,16 @@ const ShopContextProvider = (props) => {
                         'csrf-token': localStorage.getItem('csrfToken')
                     } 
                 })
+                // Hiển thị thông báo thành công
+                toast.success(`Đã thêm "${bookName}" vào giỏ hàng!`);
 
             } catch (error) {
                 console.log(error)
                 toast.error(error.message)
             }
+        } else {
+            // Hiển thị thông báo thành công ngay cả khi không đăng nhập
+            toast.success(`Đã thêm "${bookName}" vào giỏ hàng!`);
         }
     }
 
@@ -390,6 +400,116 @@ const ShopContextProvider = (props) => {
         getProductsData()
     }, [])
 
+    // Wishlist Methods
+    const addToWishlist = async (productId) => {
+        if (!user) {
+            toast.error('Vui lòng đăng nhập để thêm vào danh sách yêu thích')
+            navigate('/login')
+            return
+        }
+        
+        try {
+            const response = await axios.post(
+                `${backendUrl}/api/user/wishlist/add`,
+                { userId: user.id, productId },
+                { 
+                    headers: { 
+                        token,
+                        'x-csrf-token': localStorage.getItem('csrfToken'),
+                        'csrf-token': localStorage.getItem('csrfToken')
+                    } 
+                }
+            )
+            
+            if (response.data.success) {
+                setWishlistItems(response.data.wishlist)
+                toast.success('Đã thêm vào danh sách yêu thích')
+                return true
+            } else {
+                toast.error(response.data.message)
+                return false
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error('Đã xảy ra lỗi khi thêm vào danh sách yêu thích')
+            return false
+        }
+    }
+    
+    const removeFromWishlist = async (productId) => {
+        if (!user) {
+            return
+        }
+        
+        try {
+            const response = await axios.post(
+                `${backendUrl}/api/user/wishlist/remove`,
+                { userId: user.id, productId },
+                { 
+                    headers: { 
+                        token,
+                        'x-csrf-token': localStorage.getItem('csrfToken'),
+                        'csrf-token': localStorage.getItem('csrfToken')
+                    } 
+                }
+            )
+            
+            if (response.data.success) {
+                setWishlistItems(response.data.wishlist)
+                toast.success('Đã xóa khỏi danh sách yêu thích')
+                return true
+            } else {
+                toast.error(response.data.message)
+                return false
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error('Đã xảy ra lỗi khi xóa khỏi danh sách yêu thích')
+            return false
+        }
+    }
+    
+    const getWishlist = async () => {
+        if (!user) {
+            return []
+        }
+        
+        try {
+            const response = await axios.post(
+                `${backendUrl}/api/user/wishlist/get`,
+                { userId: user.id },
+                { 
+                    headers: { 
+                        token,
+                        'x-csrf-token': localStorage.getItem('csrfToken'),
+                        'csrf-token': localStorage.getItem('csrfToken')
+                    } 
+                }
+            )
+            
+            if (response.data.success) {
+                setWishlistItems(response.data.wishlist)
+                return response.data.wishlist
+            } else {
+                console.log(response.data.message)
+                return []
+            }
+        } catch (error) {
+            console.log(error)
+            return []
+        }
+    }
+    
+    const isInWishlist = (productId) => {
+        return wishlistItems.includes(productId)
+    }
+
+    // Load wishlist when user is authenticated
+    useEffect(() => {
+        if (user && token) {
+            getWishlist()
+        }
+    }, [user, token])
 
     const contextValue = { 
         books, 
@@ -401,7 +521,7 @@ const ShopContextProvider = (props) => {
         setRefreshToken,
         user,
         setUser,
-        loading,
+        loading, 
         authError, 
         cartItems, 
         setCartItems, 
@@ -415,7 +535,12 @@ const ShopContextProvider = (props) => {
         loginUser,
         logoutUser,
         forgotPassword,
-        resetPassword
+        resetPassword,
+        wishlistItems,
+        addToWishlist,
+        removeFromWishlist,
+        getWishlist,
+        isInWishlist
     }
 
     return (

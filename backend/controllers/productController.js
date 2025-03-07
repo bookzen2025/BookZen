@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary"
 import productModel from "../models/productModel.js";
+import orderModel from "../models/orderModel.js";
 
 // Controller function to create product
 const createProduct = async (req, res) => {
@@ -101,4 +102,83 @@ const getProductById = async (req, res) => {
     }
 };
 
-export { createProduct, deleteProduct, getAllProducts, getProductById };
+// Thêm đánh giá cho sản phẩm
+const addProductReview = async (req, res) => {
+    try {
+        const { productId, review, userId } = req.body;
+        
+        if (!productId || !review || !userId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin sản phẩm, đánh giá hoặc người dùng" 
+            });
+        }
+        
+        // Kiểm tra xem sản phẩm có tồn tại không
+        const product = await productModel.findById(productId);
+        
+        if (!product) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy sản phẩm" 
+            });
+        }
+        
+        // Kiểm tra xem người dùng đã mua sản phẩm này chưa
+        const orders = await orderModel.find({ userId });
+        
+        if (!orders || orders.length === 0) {
+            return res.status(403).json({ 
+                success: false, 
+                message: "Bạn cần mua sản phẩm này trước khi đánh giá" 
+            });
+        }
+        
+        // Kiểm tra xem sản phẩm có trong đơn hàng nào không
+        let hasPurchased = false;
+        
+        for (const order of orders) {
+            // Kiểm tra trong mảng items của đơn hàng
+            const foundItem = order.items.find(item => item.id === productId);
+            
+            if (foundItem) {
+                hasPurchased = true;
+                break;
+            }
+        }
+        
+        if (!hasPurchased) {
+            return res.status(403).json({ 
+                success: false, 
+                message: "Bạn cần mua sản phẩm này trước khi đánh giá" 
+            });
+        }
+        
+        // Thêm đánh giá mới vào mảng reviews
+        const newReview = {
+            name: review.name,
+            rating: review.rating,
+            comment: review.comment,
+            date: new Date()
+        };
+        
+        product.reviews.push(newReview);
+        
+        // Lưu sản phẩm với đánh giá mới
+        await product.save();
+        
+        res.json({ 
+            success: true, 
+            message: "Đánh giá đã được thêm thành công", 
+            reviews: product.reviews 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi thêm đánh giá" 
+        });
+    }
+};
+
+export { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview };

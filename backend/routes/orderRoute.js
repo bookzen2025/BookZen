@@ -1,6 +1,6 @@
 import express from "express"
 import adminAuth from "../middleware/adminAuth.js"
-import { allOrders, placeOrder, placeBankTransfer, UpdateStatus, userOrders, markBankTransferComplete } from "../controllers/orderController.js"
+import { allOrders, placeOrder, placeBankTransfer, UpdateStatus, userOrders, markBankTransferComplete, checkUserPurchased } from "../controllers/orderController.js"
 import authUser from "../middleware/auth.js"
 
 const orderRouter = express.Router()
@@ -18,5 +18,6 @@ orderRouter.post('/complete-bank-transfer', authUser, markBankTransferComplete)
 
 // For User
 orderRouter.post('/userorders', authUser, userOrders)
+orderRouter.post('/check-purchased', authUser, checkUserPurchased)
 
 export default orderRouter

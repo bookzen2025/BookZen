@@ -7,7 +7,10 @@ import {
     handleForgotPassword,
     handleResetPassword,
     handleTokenRefresh,
-    handleLogout
+    handleLogout,
+    addToWishlist,
+    removeFromWishlist,
+    getWishlist
 } from "../controllers/userController.js"
 import { loginRateLimiter, passwordResetRateLimiter } from "../middleware/rateLimiter.js"
 import { csrfProtection } from "../middleware/csrf.js"
@@ -26,5 +29,10 @@ userRouter.post('/forgot-password', passwordResetRateLimiter, handleForgotPasswo
 userRouter.post('/reset-password', handleResetPassword)
 userRouter.post('/refresh-token', handleTokenRefresh)
 userRouter.post('/logout', authUser, handleLogout)
+
+// Wishlist routes
+userRouter.post('/wishlist/add', authUser, addToWishlist)
+userRouter.post('/wishlist/remove', authUser, removeFromWishlist)
+userRouter.post('/wishlist/get', authUser, getWishlist)
 
 export default userRouter

@@ -116,4 +116,54 @@ const UpdateStatus = async (req, res) => {
     }
 }
 
-export { placeOrder, placeBankTransfer, allOrders, userOrders, markBankTransferComplete, UpdateStatus }
+// Kiểm tra xem người dùng đã mua sách chưa
+const checkUserPurchased = async (req, res) => {
+    try {
+        const { userId, productId } = req.body;
+        
+        if (!userId || !productId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin người dùng hoặc sản phẩm" 
+            });
+        }
+        
+        // Tìm tất cả đơn hàng của người dùng
+        const orders = await orderModel.find({ userId });
+        
+        if (!orders || orders.length === 0) {
+            return res.json({ 
+                success: true, 
+                hasPurchased: false,
+                message: "Người dùng chưa có đơn hàng nào" 
+            });
+        }
+        
+        // Kiểm tra xem sản phẩm có trong đơn hàng nào không
+        let hasPurchased = false;
+        
+        for (const order of orders) {
+            // Kiểm tra trong mảng items của đơn hàng
+            const foundItem = order.items.find(item => item.id === productId);
+            
+            if (foundItem) {
+                hasPurchased = true;
+                break;
+            }
+        }
+        
+        res.json({ 
+            success: true, 
+            hasPurchased,
+            message: hasPurchased ? "Người dùng đã mua sản phẩm này" : "Người dùng chưa mua sản phẩm này"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi kiểm tra lịch sử mua hàng" 
+        });
+    }
+};
+
+export { placeOrder, placeBankTransfer, allOrders, userOrders, markBankTransferComplete, UpdateStatus, checkUserPurchased }

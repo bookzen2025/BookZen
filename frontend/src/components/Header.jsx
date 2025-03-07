@@ -7,6 +7,7 @@ import { CgMenuLeft } from "react-icons/cg"
 import { TbUserCircle } from "react-icons/tb"
 import { RiUserLine, RiShoppingBag4Line } from "react-icons/ri"
 import { BiLogOut } from "react-icons/bi"
+import { FaHeart } from "react-icons/fa"
 import { ShopContext } from '../context/ShopContext'
 import { useAuth } from '../hooks/useAuth'
 
@@ -86,6 +87,10 @@ const Header = () => {
                         {isAuthenticated && <>
                             <ul className='bg-white p-1 w-32 ring-1 ring-slate-900/5 rounded absolute right-0 top-7 hidden group-hover:flex flex-col regular-14 shadow-md'>
                                 <li onClick={()=> navigate('/orders')} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer'>Orders</li>
+                                <li onClick={()=> navigate('/wishlist')} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer flex items-center'>
+                                    <FaHeart className="mr-1 text-red-500" />
+                                    Wishlist
+                                </li>
                                 <li onClick={handleLogout} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer flex items-center'>
                                     {loggingOut ? (
                                         <>

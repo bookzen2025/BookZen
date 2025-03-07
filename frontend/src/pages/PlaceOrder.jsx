@@ -10,20 +10,18 @@ import { ShopContext } from '../context/ShopContext'
 import { useAuth } from '../hooks/useAuth'
 import axios from 'axios'
 import { toast } from 'react-toastify'
+import vietnamProvinces from '../data/vietnam-provinces'
 
 // Create schema for shipping address validation
 const shippingSchema = yup.object().shape({
-  firstName: yup.string().required('First name is required'),
-  lastName: yup.string().required('Last name is required'),
-  email: yup.string().required('Email is required').email('Please enter a valid email'),
-  street: yup.string().required('Street address is required'),
-  city: yup.string().required('City is required'),
-  state: yup.string().required('State/Province is required'),
-  zipcode: yup.string().required('ZIP/Postal code is required'),
-  country: yup.string().required('Country is required'),
+  fullName: yup.string().required('Họ và tên là bắt buộc'),
+  email: yup.string().required('Email là bắt buộc').email('Vui lòng nhập email hợp lệ'),
   phone: yup.string()
-    .required('Phone number is required')
-    .matches(/^[0-9+\s-]{8,15}$/, 'Please enter a valid phone number')
+    .required('Số điện thoại là bắt buộc')
+    .matches(/^[0-9+\s-]{8,15}$/, 'Vui lòng nhập số điện thoại hợp lệ'),
+  province: yup.string().required('Vui lòng chọn tỉnh/thành phố'),
+  district: yup.string().required('Vui lòng chọn quận/huyện'),
+  address: yup.string().required('Địa chỉ cụ thể là bắt buộc'),
 });
 
 const PlaceOrder = () => {
@@ -33,27 +31,47 @@ const PlaceOrder = () => {
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderInfo, setOrderInfo] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedProvince, setSelectedProvince] = useState('')
+  const [districts, setDistricts] = useState([])
+  
+  // Hàm trợ giúp điều hướng sang trang orders
+  const navigateToOrders = () => {
+    // Sử dụng window.location.href thay vì navigate để buộc tải lại trang
+    window.location.href = '/orders?success=true';
+  }
   
   // Set up form with React Hook Form
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm({
-    resolver: yupResolver(shippingSchema),
-    defaultValues: {
-      country: 'Việt Nam',
-    }
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+    resolver: yupResolver(shippingSchema)
   });
+
+  // Watch the province field to update districts
+  const watchProvince = watch('province');
+
+  // Update districts when province changes
+  useEffect(() => {
+    if (watchProvince) {
+      const province = vietnamProvinces.find(p => p.name === watchProvince);
+      if (province) {
+        setDistricts(province.districts);
+        setSelectedProvince(province.name);
+        // Reset district when province changes
+        setValue('district', '');
+      }
+    }
+  }, [watchProvince, setValue]);
 
   // Pre-fill form with user data if available
   useEffect(() => {
     if (user?.email) {
       setValue('email', user.email);
-      // If we had more user details in our auth context, we could pre-fill more fields
     }
   }, [user, setValue]);
   
   // Redirect if not authenticated or cart is empty
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.info("Please login to proceed to checkout", {
+      toast.info("Vui lòng đăng nhập để tiếp tục thanh toán", {
         position: "top-center"
       });
       navigate('/login');
@@ -62,7 +80,7 @@ const PlaceOrder = () => {
     
     const hasItems = Object.values(cartItems).some(qty => qty > 0);
     if (!hasItems) {
-      toast.info("Your cart is empty", {
+      toast.info("Giỏ hàng của bạn trống", {
         position: "top-center"
       });
       navigate('/cart');
@@ -87,8 +105,18 @@ const PlaceOrder = () => {
         }
       }
       
+      // Transform form data to fit backend expectations
+      const addressData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        province: formData.province,
+        district: formData.district,
+        address: formData.address
+      }
+      
       let orderData = {
-        address: formData,
+        address: addressData,
         items: orderItems,
         amount: getCartAmount() + delivery_charges
       }
@@ -104,9 +132,12 @@ const PlaceOrder = () => {
             } 
           })
           if (response.data.success) {
-            setCartItems({})
-            toast.success("Đặt hàng thành công!")
-            navigate('/orders')
+            // Xóa giỏ hàng trước
+            setCartItems({});
+            
+            // Sau đó điều hướng đến trang orders sử dụng window.location
+            toast.success("Đặt hàng thành công!");
+            navigateToOrders();
           } else {
             toast.error(response.data.message)
           }
@@ -127,7 +158,7 @@ const PlaceOrder = () => {
               orderId: responseBankTransfer.data.orderId,
               amount: getCartAmount() + delivery_charges,
               items: orderItems,
-              address: formData
+              address: addressData
             })
             setOrderPlaced(true)
           } else {
@@ -135,7 +166,7 @@ const PlaceOrder = () => {
           }
           break
         default:
-          toast.error("Invalid payment method")
+          toast.error("Phương thức thanh toán không hợp lệ")
           break;
       }
     } catch (error) {
@@ -162,9 +193,12 @@ const PlaceOrder = () => {
       )
       
       if (response.data.success) {
-        setCartItems({}) // Xóa giỏ hàng
-        toast.success("Xác nhận thanh toán thành công!")
-        navigate('/orders')
+        // Xóa giỏ hàng trước
+        setCartItems({});
+        
+        // Sau đó điều hướng đến trang orders
+        toast.success("Xác nhận thanh toán thành công!");
+        navigateToOrders();
       } else {
         toast.error(response.data.message)
       }
@@ -216,8 +250,8 @@ const PlaceOrder = () => {
             <div className='mb-6'>
               <h3 className='font-medium text-lg mb-3'>Địa chỉ giao hàng</h3>
               <div className='bg-primary p-4 rounded-lg'>
-                <p><strong>Họ tên:</strong> {orderInfo.address.lastName} {orderInfo.address.firstName}</p>
-                <p><strong>Địa chỉ:</strong> {orderInfo.address.street}, {orderInfo.address.city}, {orderInfo.address.state}</p>
+                <p><strong>Họ tên:</strong> {orderInfo.address.fullName}</p>
+                <p><strong>Địa chỉ:</strong> {orderInfo.address.address}, {orderInfo.address.district}, {orderInfo.address.province}</p>
                 <p><strong>Số điện thoại:</strong> {orderInfo.address.phone}</p>
                 <p><strong>Email:</strong> {orderInfo.address.email}</p>
               </div>
@@ -276,32 +310,22 @@ const PlaceOrder = () => {
           {/* Left Side */}
           <div className='flex flex-1 flex-col gap-3 text-[95%]'>
             <Title title1={'Thông tin'} title2={'giao hàng'} title1Styles={'h3'} />
-            <div className='flex gap-3'>
-              <div className="w-1/2">
-                <input 
-                  {...register('firstName')} 
-                  type="text" 
-                  placeholder='Tên' 
-                  className={`ring-1 ${errors.firstName ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                  aria-invalid={errors.firstName ? "true" : "false"}
-                />
-                {errors.firstName && (
-                  <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>
-                )}
-              </div>
-              <div className="w-1/2">
-                <input 
-                  {...register('lastName')} 
-                  type="text" 
-                  placeholder='Họ' 
-                  className={`ring-1 ${errors.lastName ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                  aria-invalid={errors.lastName ? "true" : "false"}
-                />
-                {errors.lastName && (
-                  <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>
-                )}
-              </div>
+            
+            {/* Họ và tên */}
+            <div>
+              <input 
+                {...register('fullName')} 
+                type="text" 
+                placeholder='Họ và tên' 
+                className={`ring-1 ${errors.fullName ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                aria-invalid={errors.fullName ? "true" : "false"}
+              />
+              {errors.fullName && (
+                <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>
+              )}
             </div>
+            
+            {/* Email */}
             <div>
               <input 
                 {...register('email')} 
@@ -314,6 +338,8 @@ const PlaceOrder = () => {
                 <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
               )}
             </div>
+            
+            {/* Số điện thoại */}
             <div>
               <input 
                 {...register('phone')} 
@@ -326,69 +352,58 @@ const PlaceOrder = () => {
                 <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
               )}
             </div>
+            
+            {/* Tỉnh/Thành phố */}
             <div>
-              <input 
-                {...register('street')} 
-                type="text" 
-                placeholder='Địa chỉ' 
-                className={`ring-1 ${errors.street ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                aria-invalid={errors.street ? "true" : "false"}
-              />
-              {errors.street && (
-                <p className="text-red-500 text-xs mt-1">{errors.street.message}</p>
+              <select
+                {...register('province')}
+                className={`ring-1 ${errors.province ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`}
+                aria-invalid={errors.province ? "true" : "false"}
+              >
+                <option value="">Chọn Tỉnh/Thành phố</option>
+                {vietnamProvinces.map(province => (
+                  <option key={province.id} value={province.name}>
+                    {province.name}
+                  </option>
+                ))}
+              </select>
+              {errors.province && (
+                <p className="text-red-500 text-xs mt-1">{errors.province.message}</p>
               )}
             </div>
-            <div className='flex gap-3'>
-              <div className="w-1/2">
-                <input 
-                  {...register('city')} 
-                  type="text" 
-                  placeholder='Thành phố' 
-                  className={`ring-1 ${errors.city ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                  aria-invalid={errors.city ? "true" : "false"}
-                />
-                {errors.city && (
-                  <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>
-                )}
-              </div>
-              <div className="w-1/2">
-                <input 
-                  {...register('state')} 
-                  type="text" 
-                  placeholder='Tỉnh/Thành' 
-                  className={`ring-1 ${errors.state ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                  aria-invalid={errors.state ? "true" : "false"}
-                />
-                {errors.state && (
-                  <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>
-                )}
-              </div>
+            
+            {/* Quận/Huyện */}
+            <div>
+              <select
+                {...register('district')}
+                className={`ring-1 ${errors.district ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`}
+                aria-invalid={errors.district ? "true" : "false"}
+                disabled={!selectedProvince}
+              >
+                <option value="">Chọn Quận/Huyện</option>
+                {districts.map(district => (
+                  <option key={district.id} value={district.name}>
+                    {district.name}
+                  </option>
+                ))}
+              </select>
+              {errors.district && (
+                <p className="text-red-500 text-xs mt-1">{errors.district.message}</p>
+              )}
             </div>
-            <div className='flex gap-3'>
-              <div className="w-1/2">
-                <input 
-                  {...register('zipcode')} 
-                  type="text" 
-                  placeholder='Mã bưu điện' 
-                  className={`ring-1 ${errors.zipcode ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                  aria-invalid={errors.zipcode ? "true" : "false"}
-                />
-                {errors.zipcode && (
-                  <p className="text-red-500 text-xs mt-1">{errors.zipcode.message}</p>
-                )}
-              </div>
-              <div className="w-1/2">
-                <input 
-                  {...register('country')} 
-                  type="text" 
-                  placeholder='Quốc gia' 
-                  className={`ring-1 ${errors.country ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
-                  aria-invalid={errors.country ? "true" : "false"}
-                />
-                {errors.country && (
-                  <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>
-                )}
-              </div>
+            
+            {/* Địa chỉ cụ thể */}
+            <div>
+              <input 
+                {...register('address')} 
+                type="text" 
+                placeholder='Địa chỉ cụ thể (số nhà, tên đường, thôn/ấp...)' 
+                className={`ring-1 ${errors.address ? 'ring-red-500' : 'ring-slate-900/15'} p-1 pl-3 rounded-sm bg-primary outline-none w-full`} 
+                aria-invalid={errors.address ? "true" : "false"}
+              />
+              {errors.address && (
+                <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
+              )}
             </div>
           </div>
 

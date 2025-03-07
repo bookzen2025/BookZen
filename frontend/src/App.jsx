@@ -14,11 +14,23 @@ import Verify from './pages/Verify'
 import BookDetail from './pages/BookDetail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import Wishlist from './pages/Wishlist'
 
 const App = () => {
   return (
     <main className='overflow-hidden bg-primary'>
-      <ToastContainer />
+      <ToastContainer 
+        position="bottom-right"
+        autoClose={1500}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover={false}
+        theme="light"
+      />
       <Header />
       <Routes>
         <Route path='/' element={<Home />} />
@@ -32,6 +44,7 @@ const App = () => {
         <Route path='/book/:id' element={<BookDetail />} />
         <Route path='/forgot-password' element={<ForgotPassword />} />
         <Route path='/reset-password' element={<ResetPassword />} />
+        <Route path='/wishlist' element={<Wishlist />} />
       </Routes>
     </main>
   )

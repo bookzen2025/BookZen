@@ -321,6 +321,143 @@ const handleResetPassword = async (req, res) => {
     }
 };
 
+// Controller function to handle adding item to wishlist
+const addToWishlist = async (req, res) => {
+    try {
+        const { userId, productId } = req.body;
+        
+        if (!userId || !productId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin người dùng hoặc sản phẩm" 
+            });
+        }
+        
+        // Tìm người dùng
+        const user = await userModel.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
+        }
+        
+        // Kiểm tra xem sản phẩm đã có trong wishlist chưa
+        if (user.wishlist && user.wishlist.includes(productId)) {
+            return res.json({ 
+                success: true, 
+                message: "Sản phẩm đã có trong danh sách yêu thích",
+                wishlist: user.wishlist
+            });
+        }
+        
+        // Thêm sản phẩm vào wishlist
+        if (!user.wishlist) {
+            user.wishlist = [];
+        }
+        
+        user.wishlist.push(productId);
+        await user.save();
+        
+        res.json({ 
+            success: true, 
+            message: "Đã thêm vào danh sách yêu thích", 
+            wishlist: user.wishlist 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi thêm vào danh sách yêu thích" 
+        });
+    }
+};
+
+// Controller function to handle removing item from wishlist
+const removeFromWishlist = async (req, res) => {
+    try {
+        const { userId, productId } = req.body;
+        
+        if (!userId || !productId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin người dùng hoặc sản phẩm" 
+            });
+        }
+        
+        // Tìm người dùng
+        const user = await userModel.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
+        }
+        
+        // Kiểm tra xem sản phẩm có trong wishlist không
+        if (!user.wishlist || !user.wishlist.includes(productId)) {
+            return res.json({ 
+                success: true, 
+                message: "Sản phẩm không có trong danh sách yêu thích",
+                wishlist: user.wishlist || []
+            });
+        }
+        
+        // Xóa sản phẩm khỏi wishlist
+        user.wishlist = user.wishlist.filter(id => id !== productId);
+        await user.save();
+        
+        res.json({ 
+            success: true, 
+            message: "Đã xóa khỏi danh sách yêu thích", 
+            wishlist: user.wishlist 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi xóa khỏi danh sách yêu thích" 
+        });
+    }
+};
+
+// Controller function to get user's wishlist
+const getWishlist = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin người dùng" 
+            });
+        }
+        
+        // Tìm người dùng
+        const user = await userModel.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            wishlist: user.wishlist || [] 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi lấy danh sách yêu thích" 
+        });
+    }
+};
+
 export { 
     handleUserLogin, 
     handleUserRegister, 
@@ -328,5 +465,8 @@ export {
     handleForgotPassword,
     handleResetPassword,
     handleTokenRefresh,
-    handleLogout
+    handleLogout,
+    addToWishlist,
+    removeFromWishlist,
+    getWishlist
 }
