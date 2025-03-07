@@ -1,6 +1,6 @@
 import React from 'react'
 import { FaSquarePlus } from "react-icons/fa6"
-import { FaListAlt } from "react-icons/fa"
+import { FaListAlt, FaTags, FaUsers } from "react-icons/fa"
 import { MdFactCheck, MdDashboard } from "react-icons/md"
 import { BiLogOut } from "react-icons/bi"
 import logo from "../assets/logo.png"
@@ -28,9 +28,17 @@ const Sidebar = ({setToken}) => {
                         <FaListAlt />
                         <div className='hidden lg:flex'>List</div>
                     </NavLink>
+                    <NavLink to={'/categories'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
+                        <FaTags />
+                        <div className='hidden lg:flex'>Categories</div>
+                    </NavLink>
                     <NavLink to={'/orders'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <MdFactCheck />
                         <div className='hidden lg:flex'>Orders</div>
+                    </NavLink>
+                    <NavLink to={'/users'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
+                        <FaUsers />
+                        <div className='hidden lg:flex'>Users</div>
                     </NavLink>
                     {/* Logout button */}
                     <div className='max-sm:ml-5 sm:mt-72'>

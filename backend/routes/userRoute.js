@@ -10,7 +10,11 @@ import {
     handleLogout,
     addToWishlist,
     removeFromWishlist,
-    getWishlist
+    getWishlist,
+    getAllUsers,
+    getUserById,
+    updateUser,
+    deleteUser
 } from "../controllers/userController.js"
 import { loginRateLimiter, passwordResetRateLimiter } from "../middleware/rateLimiter.js"
 import { csrfProtection } from "../middleware/csrf.js"
@@ -34,5 +38,11 @@ userRouter.post('/logout', authUser, handleLogout)
 userRouter.post('/wishlist/add', authUser, addToWishlist)
 userRouter.post('/wishlist/remove', authUser, removeFromWishlist)
 userRouter.post('/wishlist/get', authUser, getWishlist)
+
+// Admin user management routes
+userRouter.get('/admin/users', getAllUsers)
+userRouter.get('/admin/users/:id', getUserById)
+userRouter.put('/admin/users/:id', updateUser)
+userRouter.delete('/admin/users/:id', deleteUser)
 
 export default userRouter

@@ -458,6 +458,158 @@ const getWishlist = async (req, res) => {
     }
 };
 
+// Admin user management functions
+const getAllUsers = async (req, res) => {
+    try {
+        // Kiểm tra token admin
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, message: 'Unauthorized access' });
+        }
+        
+        const token = authHeader.split(' ')[1];
+        try {
+            // Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // Kiểm tra xem token có phải của admin không
+            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
+                return res.status(401).json({ success: false, message: 'Unauthorized access' });
+            }
+        } catch (error) {
+            return res.status(401).json({ success: false, message: 'Invalid token' });
+        }
+
+        // Lấy danh sách người dùng, loại bỏ trường password
+        const users = await userModel.find({}).select('-password -refreshToken');
+        res.json({ success: true, users });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const getUserById = async (req, res) => {
+    try {
+        // Kiểm tra token admin
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, message: 'Unauthorized access' });
+        }
+        
+        const token = authHeader.split(' ')[1];
+        try {
+            // Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // Kiểm tra xem token có phải của admin không
+            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
+                return res.status(401).json({ success: false, message: 'Unauthorized access' });
+            }
+        } catch (error) {
+            return res.status(401).json({ success: false, message: 'Invalid token' });
+        }
+
+        const { id } = req.params;
+        const user = await userModel.findById(id).select('-password -refreshToken');
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        res.json({ success: true, user });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const updateUser = async (req, res) => {
+    try {
+        // Kiểm tra token admin
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, message: 'Unauthorized access' });
+        }
+        
+        const token = authHeader.split(' ')[1];
+        try {
+            // Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // Kiểm tra xem token có phải của admin không
+            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
+                return res.status(401).json({ success: false, message: 'Unauthorized access' });
+            }
+        } catch (error) {
+            return res.status(401).json({ success: false, message: 'Invalid token' });
+        }
+
+        const { id } = req.params;
+        const { name, email } = req.body;
+        
+        // Kiểm tra xem người dùng có tồn tại không
+        const user = await userModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Cập nhật thông tin người dùng
+        if (name) user.name = name;
+        if (email) {
+            // Kiểm tra xem email đã tồn tại chưa
+            const existingUser = await userModel.findOne({ email, _id: { $ne: id } });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: 'Email already exists' });
+            }
+            user.email = email;
+        }
+        
+        // Lưu thay đổi
+        await user.save();
+        
+        res.json({ success: true, user: { _id: user._id, name: user.name, email: user.email } });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const deleteUser = async (req, res) => {
+    try {
+        // Kiểm tra token admin
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ success: false, message: 'Unauthorized access' });
+        }
+        
+        const token = authHeader.split(' ')[1];
+        try {
+            // Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // Kiểm tra xem token có phải của admin không
+            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
+                return res.status(401).json({ success: false, message: 'Unauthorized access' });
+            }
+        } catch (error) {
+            return res.status(401).json({ success: false, message: 'Invalid token' });
+        }
+
+        const { id } = req.params;
+        
+        // Kiểm tra xem người dùng có tồn tại không
+        const user = await userModel.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Xóa người dùng
+        await userModel.findByIdAndDelete(id);
+        
+        res.json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export { 
     handleUserLogin, 
     handleUserRegister, 
@@ -468,5 +620,9 @@ export {
     handleLogout,
     addToWishlist,
     removeFromWishlist,
-    getWishlist
+    getWishlist,
+    getAllUsers,
+    getUserById,
+    updateUser,
+    deleteUser
 }

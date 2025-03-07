@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import upload_icon from "../assets/upload_icon.png"
 import axios from "axios"
 import { backend_url } from '../App'
@@ -10,8 +10,10 @@ const Add = ({ token }) => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
-  const [category, setCategory] = useState('Fiction')
+  const [category, setCategory] = useState('')
   const [popular, setPopular] = useState(false)
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(false)
   
   // Các trường thông tin sách
   const [author, setAuthor] = useState('')
@@ -19,13 +21,40 @@ const Add = ({ token }) => {
   const [publishedYear, setPublishedYear] = useState('')
   const [pages, setPages] = useState('')
 
+  useEffect(() => {
+    // Lấy danh sách danh mục từ API khi component được tải
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(`${backend_url}/api/category/list`)
+        if (response.data.success && response.data.categories.length > 0) {
+          setCategories(response.data.categories)
+          // Đặt danh mục mặc định là danh mục đầu tiên
+          setCategory(response.data.categories[0].name)
+        } else {
+          toast.warning("Không có danh mục nào. Vui lòng tạo danh mục trước khi thêm sản phẩm.")
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error)
+        toast.error("Không thể tải danh sách danh mục")
+      }
+    }
+    
+    fetchCategories()
+  }, [])
+
   const handleChangeImage = (e) => {
     setImage(e.target.files[0])
   }
 
   const onSubmitHandler = async (e) => {
     e.preventDefault()
+    
+    if (!category) {
+      return toast.error("Vui lòng chọn danh mục")
+    }
+    
     try {
+      setLoading(true)
       const formData = new FormData()
 
       formData.append("name", name)
@@ -60,6 +89,8 @@ const Add = ({ token }) => {
     } catch (error) {
       console.log(error)
       toast.error(error.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -85,14 +116,28 @@ const Add = ({ token }) => {
           {/* categories */}
           <div>
             <h5 className='h5'>Category</h5>
-            <select onChange={(e) => setCategory(e.target.value)} value={category} className='px-3 py-2 ring-1 ring-slate-900/10 rounded bg-white mt-1 sm:w-full text-gray-30'>
-              <option value="Fiction">Fiction</option>
-              <option value="Children">Children</option>
-              <option value="Health">Health</option>
-              <option value="Academic">Academic</option>
-              <option value="Business">Business</option>
-              <option value="Religious">Religious</option>
-            </select>
+            {categories.length > 0 ? (
+              <select 
+                onChange={(e) => setCategory(e.target.value)} 
+                value={category} 
+                className='px-3 py-2 ring-1 ring-slate-900/10 rounded bg-white mt-1 sm:w-full text-gray-30'
+              >
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className='mt-1 text-red-500'>
+                Chưa có danh mục nào. Vui lòng thêm danh mục trước!
+                <button
+                  type='button'
+                  onClick={() => window.location.href = '/categories'}
+                  className='ml-2 text-blue-500 underline'
+                >
+                  Đến trang danh mục
+                </button>
+              </div>
+            )}
           </div>
           
           <div className='flex gap-x-2 pt-2'>
@@ -129,7 +174,9 @@ const Add = ({ token }) => {
           <input onChange={(e) => setPopular((prev) => !prev)} type="checkbox" checked={popular} id='popular' />
           <label htmlFor="popular" className='cursor-pointer'>Add to popular</label>
         </div>
-        <button type='submit' className='btn-dark mt-3 max-w-44 sm:w-full'>Add Product</button>
+        <button type='submit' disabled={loading || categories.length === 0} className='btn-dark mt-3 max-w-44 sm:w-full'>
+          {loading ? 'Đang xử lý...' : 'Add Product'}
+        </button>
       </form>
     </div>
   )
