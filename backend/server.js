@@ -21,6 +21,9 @@ app.use(cors())
 connectDB()
 connectCloudinary()
 
+// Cấu hình phục vụ tệp tĩnh
+app.use('/uploads', express.static('uploads'))
+
 // API endpoints
 app.use('/api/user', userRouter)
 app.use('/api/product', productRouter)

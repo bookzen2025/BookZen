@@ -3,6 +3,7 @@ import { FaEdit, FaTrash } from 'react-icons/fa'
 import axios from 'axios'
 import { backend_url } from '../App'
 import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toastConfig'
+import upload_icon from "../assets/upload_icon.png"
 
 const Categories = ({ token }) => {
   const [categories, setCategories] = useState([])
@@ -13,6 +14,8 @@ const Categories = ({ token }) => {
   const [categoryId, setCategoryId] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [image, setImage] = useState(null)
+  const [previewImage, setPreviewImage] = useState(null)
   
   useEffect(() => {
     getCategories()
@@ -36,6 +39,15 @@ const Categories = ({ token }) => {
     }
   }
   
+  // Xử lý thay đổi hình ảnh
+  const handleChangeImage = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setImage(file)
+      setPreviewImage(URL.createObjectURL(file))
+    }
+  }
+  
   // Xử lý thêm/cập nhật danh mục
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -51,6 +63,11 @@ const Categories = ({ token }) => {
       const formData = new FormData()
       formData.append('name', name)
       formData.append('description', description)
+      
+      // Thêm hình ảnh vào formData nếu có
+      if (image) {
+        formData.append('image', image)
+      }
       
       let response
       if (isEditing) {
@@ -119,6 +136,10 @@ const Categories = ({ token }) => {
     setCategoryId(category._id)
     setName(category.name)
     setDescription(category.description)
+    
+    // Đặt lại hình ảnh và bản xem trước nếu có
+    setImage(null)
+    setPreviewImage(category.image || null)
   }
   
   // Reset form
@@ -127,6 +148,8 @@ const Categories = ({ token }) => {
     setCategoryId('')
     setName('')
     setDescription('')
+    setImage(null)
+    setPreviewImage(null)
   }
   
   return (
@@ -158,6 +181,40 @@ const Categories = ({ token }) => {
             />
           </div>
           
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Hình ảnh danh mục</label>
+            <div className='mt-2 flex items-center space-x-4'>
+              <label htmlFor="category-image" className='cursor-pointer'>
+                <div className='w-20 h-20 rounded-lg overflow-hidden bg-gray-50 border border-gray-300 flex items-center justify-center'>
+                  {previewImage ? (
+                    <img 
+                      src={previewImage.startsWith('blob:') ? previewImage : `${backend_url}${previewImage}`} 
+                      alt="Hình ảnh danh mục" 
+                      className='h-full w-full object-cover'
+                    />
+                  ) : (
+                    <img 
+                      src={upload_icon} 
+                      alt="Upload" 
+                      className='h-10 w-10 opacity-60'
+                    />
+                  )}
+                </div>
+                <input
+                  type="file"
+                  id="category-image"
+                  onChange={handleChangeImage}
+                  className='hidden'
+                  accept="image/*"
+                />
+              </label>
+              <div className='text-sm text-gray-500'>
+                Nhấp vào hình ảnh để tải lên. <br/>
+                {image ? `Đã chọn: ${image.name}` : 'Chưa chọn file nào'}
+              </div>
+            </div>
+          </div>
+          
           <div className='flex space-x-4'>
             <button
               type='submit'
@@ -185,6 +242,9 @@ const Categories = ({ token }) => {
           <thead className='bg-indigo-50'>
             <tr>
               <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
+                Hình ảnh
+              </th>
+              <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
                 Tên
               </th>
               <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
@@ -199,6 +259,19 @@ const Categories = ({ token }) => {
             {categories.length > 0 ? (
               categories.map((category) => (
                 <tr key={category._id}>
+                  <td className='px-6 py-4 whitespace-nowrap text-sm'>
+                    {category.image ? (
+                      <img 
+                        src={`${backend_url}${category.image}`}
+                        alt={category.name} 
+                        className='h-10 w-10 rounded-full object-cover'
+                      />
+                    ) : (
+                      <div className='h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium'>
+                        {category.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
                     {category.name}
                   </td>
@@ -223,7 +296,7 @@ const Categories = ({ token }) => {
               ))
             ) : (
               <tr>
-                <td colSpan='3' className='px-6 py-4 text-center text-sm text-gray-500'>
+                <td colSpan='4' className='px-6 py-4 text-center text-sm text-gray-500'>
                   {loading ? 'Đang tải...' : 'Không có danh mục nào'}
                 </td>
               </tr>

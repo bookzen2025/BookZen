@@ -1,22 +1,45 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { RiSearch2Line } from 'react-icons/ri'
-import { categories } from '../assets/data'
 import { LuSettings2 } from "react-icons/lu"
 import Title from '../components/Title'
 import { ShopContext } from '../context/ShopContext'
 import Item from '../components/Item'
 import Footer from '../components/Footer'
-
+import axios from 'axios'
 
 const Shop = () => {
 
   const { books } = useContext(ShopContext)
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const [categories, setCategories] = useState([])
   const [category, setCategory] = useState([])
   const [sortType, setSortType] = useState("relevant")
   const [filteredBooks, setFilteredBooks] = useState([])
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1) // Active page
   const itemsPerPage = 10 // Number of books per page
+  const [loading, setLoading] = useState(false)
+
+  // Hàm lấy danh mục từ API
+  const fetchCategories = async () => {
+    try {
+      setLoading(true)
+      const response = await axios.get(`${backendUrl}/api/category/list`)
+      if (response.data.success) {
+        setCategories(response.data.categories)
+      } else {
+        console.error("Không thể tải danh sách danh mục")
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
 
   const toggleFilter = (value, setState) => {
     setState((prev) => prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value])
@@ -78,17 +101,29 @@ const Shop = () => {
         <div className='mt-12 mb-16'>
           <h4 className='h4 mb-4 hidden sm:flex'>Categories:</h4>
           <div className='flexCenter sm:flexStart flex-wrap gap-x-12 gap-y-4'>
-            {categories.map((cat) => (
-              <label key={cat.name}>
-                <input value={cat.name} onChange={(e) => toggleFilter(e.target.value, setCategory)} type="checkbox" className='hidden peer' />
-                <div className='flexCenter flex-col gap-2 peer-checked:text-secondaryOne cursor-pointer'>
-                  <div className='bg-primary h-20 w-20 flexCenter rounded-full'>
-                    <img src={cat.image} alt={cat.name} className='object-cover h-10 w-10' />
+            {loading ? (
+              <p>Đang tải danh mục...</p>
+            ) : categories.length > 0 ? (
+              categories.map((cat) => (
+                <label key={cat._id}>
+                  <input value={cat.name} onChange={(e) => toggleFilter(e.target.value, setCategory)} type="checkbox" className='hidden peer' />
+                  <div className='flexCenter flex-col gap-2 peer-checked:text-secondaryOne cursor-pointer'>
+                    <div className='bg-primary h-20 w-20 flexCenter rounded-full'>
+                      {cat.image ? (
+                        <img src={`${backendUrl}${cat.image}`} alt={cat.name} className='object-cover h-12 w-12' />
+                      ) : (
+                        <div className='h-10 w-10 flexCenter text-lg font-medium'>
+                          {cat.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <span className='medium-14'>{cat.name}</span>
                   </div>
-                  <span className='medium-14'>{cat.name}</span>
-                </div>
-              </label>
-            ))}
+                </label>
+              ))
+            ) : (
+              <p>Không có danh mục nào</p>
+            )}
           </div>
         </div>
         {/* Books container */}
