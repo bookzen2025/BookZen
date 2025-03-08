@@ -107,7 +107,18 @@ const userOrders = async (req, res) => {
 const UpdateStatus = async (req, res) => {
     try {
         const { orderId, status } = req.body
-        await orderModel.findByIdAndUpdate(orderId, { status })
+        
+        // Tìm đơn hàng để kiểm tra phương thức thanh toán
+        const order = await orderModel.findById(orderId)
+        
+        if (status === "Delivered" && order.paymentMethod === "COD") {
+            // Nếu là đơn hàng COD và trạng thái mới là "Delivered", tự động cập nhật payment thành true
+            await orderModel.findByIdAndUpdate(orderId, { status, payment: true })
+        } else {
+            // Nếu không, chỉ cập nhật trạng thái
+            await orderModel.findByIdAndUpdate(orderId, { status })
+        }
+        
         res.json({ success: true, message: 'Status Updated' })
 
     } catch (error) {

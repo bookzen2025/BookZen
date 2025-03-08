@@ -79,7 +79,11 @@ const Orders = ({ token }) => {
             <div>
               <p><span className='text-tertiary medium-14'>Total: </span>{order.items.length}</p>
               <p><span className='text-tertiary medium-14'>Method: </span>{order.paymentMethod}</p>
-              <p><span className='text-tertiary medium-14'>Payment: </span>{order.payment ? "Done" : "Pending"}</p>
+              <p><span className='text-tertiary medium-14'>Payment: </span>
+                <span className={order.payment ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                  {order.payment ? "Done" : "Pending"}
+                </span>
+              </p>
               <p><span className='text-tertiary medium-14'>Date: </span>{new Date(order.date).toLocaleDateString()}</p>
             </div>
             <p><span className='text-tertiary medium-14'>Price: </span>{currency}{order.amount}</p>
