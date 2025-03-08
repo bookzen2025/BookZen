@@ -63,6 +63,23 @@
     @apply text-secondary relative after:w-2/3 after:h-[2px] after:rounded-full after:bg-secondary after:absolute after:-bottom-2 after:left-0;
   }
 
+  /* Book sticky container */
+  .book-sticky-container {
+    @apply md:h-screen overflow-auto;
+  }
+
+  .book-sticky-image {
+    @apply sticky top-28;
+  }
+  
+  /* Thêm styles mới cho sticky image */
+  .book-image-sticky {
+    position: sticky;
+    top: 120px;
+    display: block;
+    height: fit-content;
+  }
+
   .btn-white  { 
     @apply  medium-14 bg-white text-tertiary ring-1 ring-white px-7 py-2.5 rounded-full
   }
