@@ -99,107 +99,109 @@ const Orders = () => {
           </div>
         )}
         
-        {/* Container */}
-        {!loading && (
-          orderData.length === 0 ? (
-            <div className="bg-white p-8 rounded-lg text-center my-6">
-              <div className="text-6xl mb-4 text-gray-300 flex justify-center">
-                <i className="far fa-clipboard"></i>
-              </div>
-              <h3 className="text-xl font-medium mb-2">Chưa có đơn hàng nào</h3>
-              <p className="text-gray-500 mb-6">Bạn chưa đặt đơn hàng nào. Hãy tiếp tục mua sắm!</p>
-              <button onClick={() => window.location.href = '/shop'} className="btn-secondaryOne">
-                Tiếp tục mua sắm
-              </button>
-            </div>
-          ) : (
-            orderData.map((item, i) => (
-              <div key={i} className='bg-white p-2 mt-3 rounded-lg'>
-                <div className='text-gray-700 flex flex-col gap-4'>
-                  <div className='flex gap-x-3 w-full'>
-                    {/* Image */}
-                    <div className='flex gap-6'>
-                      <img src={item.image} alt="orderItemImg" width={55} className='object-cover aspect-square rounded' />
+        {/* Empty state */}
+        {!loading && orderData.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Bạn chưa có đơn hàng nào.</p>
+          </div>
+        )}
+        
+        {/* Orders list */}
+        {!loading && orderData.length > 0 && (
+          <div className="space-y-6">
+            {orderData.map((item, index) => (
+              <div key={index} className="bg-white p-4 rounded-lg shadow-sm">
+                {/* Order header */}
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b">
+                  <div>
+                    <p className="text-sm text-gray-500">Mã đơn hàng: {item.orderId}</p>
+                    <p className="text-sm text-gray-500">Ngày đặt: {new Date(item.date).toLocaleDateString('vi-VN')}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                      item.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      item.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      item.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {item.status === 'pending' ? 'Đang xử lý' :
+                       item.status === 'confirmed' ? 'Đã xác nhận' :
+                       item.status === 'cancelled' ? 'Đã hủy' :
+                       item.status}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Order details */}
+                <div className="flex flex-wrap items-center gap-4 py-4">
+                  <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded" />
+                  <div className="flex-1">
+                    <h3 className="font-medium">{item.name}</h3>
+                    <p className="text-gray-500">Số lượng: {item.quantity}</p>
+                    <p className="text-gray-500">Giá: {currency}{item.price.toLocaleString('vi-VN')}</p>
+                  </div>
+                </div>
+                
+                {/* Payment info */}
+                <div className="pt-4 border-t">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        Phương thức thanh toán: {
+                          item.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' :
+                          item.paymentMethod === 'bank' ? 'Chuyển khoản ngân hàng' :
+                          item.paymentMethod
+                        }
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Trạng thái thanh toán: {
+                          item.payment === 'pending' ? 'Chưa thanh toán' :
+                          item.payment === 'completed' ? 'Đã thanh toán' :
+                          item.payment
+                        }
+                      </p>
                     </div>
-                    {/* order info */}
-                    <div className='block w-full'>
-                      <h5 className='h5 capitalize line-clamp-1'>{item.name}</h5>
-                      <div className='flexBetween'>
-                        <div>
-                          <div className='flex items-center gap-x-1 sm:gap-x-3'>
-                            <div className='flexCenter gap-x-1'>
-                              <h5 className='medium-14'>Giá:</h5>
-                              <p>{currency}{item.price}</p>
-                            </div>
-                            <div className='flexCenter gap-x-1'>
-                              <h5 className='medium-14'>Số lượng:</h5>
-                              <p>{item.quantity}</p>
-                            </div>
-                            <div className='sm:flexCenter gap-x-1 hidden'>
-                              <h5 className='medium-14'>Thanh toán:</h5>
-                              <p className='text-gray-400'>{item.paymentMethod}</p>
-                            </div>
-                          </div>
-                          <div className='flex items-center gap-x-1'>
-                            <h5 className='medium-14'>Ngày:</h5>
-                            <p className='text-gray-400'>{new Date(item.date).toLocaleDateString()}</p>
-                          </div>
-                          <div className='flex items-center gap-x-1 sm:hidden'>
-                            <h5 className='medium-14'>Thanh toán:</h5>
-                            <p className='text-gray-400'>{item.paymentMethod}</p>
-                          </div>
-                        </div>
-                        
-                        {/* Status & buttons */}
-                        <div className='flex flex-col xl:flex-row gap-3'>
-                          <div className='flex items-center gap-2'>
-                            <p className='min-w-2 h-2 rounded-full bg-secondary'></p>
-                            <p>{item.status}</p>
-                          </div>
-                          
-                          {/* Show confirm payment button for bank transfers that are not yet paid */}
-                          {item.paymentMethod === 'Bank Transfer' && !item.payment && item.orderId !== confirmingOrder && (
-                            <button 
-                              onClick={() => setConfirmingOrder(item.orderId)}
-                              className='btn-secondaryOne !px-2.5 !py-1 !text-xs'
-                            >
-                              Xác nhận đã thanh toán
-                            </button>
-                          )}
-                          
-                          {/* Confirmation buttons */}
-                          {item.orderId === confirmingOrder && (
-                            <div className='flex gap-2'>
-                              <button 
-                                onClick={() => confirmBankTransfer(item.orderId)}
-                                className='bg-green-500 text-white rounded-full px-2 py-1 text-xs'
-                              >
-                                Xác nhận
-                              </button>
-                              <button 
-                                onClick={() => setConfirmingOrder(null)}
-                                className='bg-gray-300 text-gray-700 rounded-full px-2 py-1 text-xs'
-                              >
-                                Hủy
-                              </button>
-                            </div>
-                          )}
-                          
-                          {/* Track order button */}
-                          <button 
-                            onClick={loadOrderData} 
-                            className='btn-secondaryOne !px-1.5 !py-1 !text-xs'
-                          >
-                            Theo dõi đơn hàng
-                          </button>
-                        </div>
+                    
+                    {/* Bank transfer confirmation button */}
+                    {item.paymentMethod === 'bank' && item.payment === 'pending' && (
+                      <button
+                        onClick={() => setConfirmingOrder(item.orderId)}
+                        className="btn-secondaryOne"
+                      >
+                        Xác nhận đã chuyển khoản
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Confirmation modal */}
+                {confirmingOrder === item.orderId && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                      <h3 className="text-lg font-medium mb-4">Xác nhận chuyển khoản</h3>
+                      <p className="text-gray-600 mb-6">
+                        Bạn có chắc chắn đã hoàn thành chuyển khoản cho đơn hàng này?
+                      </p>
+                      <div className="flex justify-end gap-4">
+                        <button
+                          onClick={() => setConfirmingOrder(null)}
+                          className="btn-outline"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          onClick={() => confirmBankTransfer(item.orderId)}
+                          className="btn-secondaryOne"
+                        >
+                          Xác nhận
+                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            ))
-          )
+            ))}
+          </div>
         )}
       </div>
 

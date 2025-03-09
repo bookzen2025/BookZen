@@ -10,8 +10,8 @@ import { ShopContext } from '../context/ShopContext';
 // Schema for forgot password form
 const forgotPasswordSchema = yup.object().shape({
   email: yup.string()
-    .required('Email is required')
-    .email('Please enter a valid email'),
+    .required('Email là bắt buộc')
+    .email('Vui lòng nhập email hợp lệ'),
 });
 
 const ForgotPassword = () => {

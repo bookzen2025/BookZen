@@ -149,7 +149,7 @@ const BookDetail = () => {
     }
     
     if (!hasPurchased) {
-      toast.error('Bạn cần mua sản phẩm này trước khi đánh giá');
+      toast.error('Bạn cần mua và nhận sản phẩm này trước khi đánh giá');
       return;
     }
     
@@ -248,7 +248,7 @@ const BookDetail = () => {
   if (!book) {
     return (
       <div className="max-padd-container min-h-screen pt-28 flex items-center justify-center">
-        <p className="text-lg">Book not found</p>
+        <p className="text-lg">Không tìm thấy sách</p>
       </div>
     );
   }
@@ -297,7 +297,7 @@ const BookDetail = () => {
                   {book.author && (
                     <div className="flex items-center gap-1">
                       <span className="inline-block h-1 w-1 rounded-full bg-gray-400"></span>
-                      <span className="medium-16">By {book.author}</span>
+                      <span className="medium-16">Tác giả: {book.author}</span>
                     </div>
                   )}
                 </div>
@@ -341,7 +341,7 @@ const BookDetail = () => {
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h4 className="text-xl font-bold text-tertiary mb-4 flex items-center">
                   <span className="inline-block w-2 h-6 bg-secondary rounded-full mr-2"></span>
-                  Book Details
+                  Thông tin sách
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -349,7 +349,7 @@ const BookDetail = () => {
                     <div className="flex items-center gap-3">
                       <BsPersonFill className="text-secondary text-xl" />
                       <div>
-                        <p className="text-sm text-gray-500">Author</p>
+                        <p className="text-sm text-gray-500">Tác giả</p>
                         <p className="font-medium">{book.author}</p>
                       </div>
                     </div>
@@ -359,7 +359,7 @@ const BookDetail = () => {
                     <div className="flex items-center gap-3">
                       <BsBuildingsFill className="text-secondary text-xl" />
                       <div>
-                        <p className="text-sm text-gray-500">Publisher</p>
+                        <p className="text-sm text-gray-500">Nhà xuất bản</p>
                         <p className="font-medium">{book.publisher}</p>
                       </div>
                     </div>
@@ -369,7 +369,7 @@ const BookDetail = () => {
                     <div className="flex items-center gap-3">
                       <FaCalendarAlt className="text-secondary text-xl" />
                       <div>
-                        <p className="text-sm text-gray-500">Published Year</p>
+                        <p className="text-sm text-gray-500">Năm xuất bản</p>
                         <p className="font-medium">{book.publishedYear}</p>
                       </div>
                     </div>
@@ -379,7 +379,7 @@ const BookDetail = () => {
                     <div className="flex items-center gap-3">
                       <FaBookOpen className="text-secondary text-xl" />
                       <div>
-                        <p className="text-sm text-gray-500">Pages</p>
+                        <p className="text-sm text-gray-500">Số trang</p>
                         <p className="font-medium">{book.pages}</p>
                       </div>
                     </div>
@@ -391,7 +391,7 @@ const BookDetail = () => {
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h4 className="text-xl font-bold text-tertiary mb-4 flex items-center">
                   <span className="inline-block w-2 h-6 bg-secondary rounded-full mr-2"></span>
-                  Description
+                  Mô tả
                 </h4>
                 <div className="prose prose-sm max-w-none">
                   <p className="text-gray-700 leading-relaxed">{book.description}</p>
@@ -490,7 +490,7 @@ const BookDetail = () => {
                       <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
                         <div className="flex items-center gap-2 text-gray-500">
                           <FaShoppingBag className="text-gray-400" />
-                          <p>Bạn cần mua sản phẩm này trước khi đánh giá</p>
+                          <p>Bạn cần mua và nhận sản phẩm này trước khi đánh giá</p>
                         </div>
                       </div>
                     )

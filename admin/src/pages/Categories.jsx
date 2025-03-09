@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FaEdit, FaTrash } from 'react-icons/fa'
+import { FaEdit, FaTrash, FaSortAlphaDown, FaSortAlphaUp } from 'react-icons/fa'
 import axios from 'axios'
 import { backend_url } from '../App'
 import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toastConfig'
@@ -8,12 +8,12 @@ import upload_icon from "../assets/upload_icon.png"
 const Categories = ({ token }) => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
+  const [sortOrder, setSortOrder] = useState('asc') // Thêm state cho sắp xếp
   
   // State cho form thêm/cập nhật danh mục
   const [isEditing, setIsEditing] = useState(false)
   const [categoryId, setCategoryId] = useState('')
   const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
   const [image, setImage] = useState(null)
   const [previewImage, setPreviewImage] = useState(null)
   
@@ -62,7 +62,6 @@ const Categories = ({ token }) => {
       
       const formData = new FormData()
       formData.append('name', name)
-      formData.append('description', description)
       
       // Thêm hình ảnh vào formData nếu có
       if (image) {
@@ -135,7 +134,6 @@ const Categories = ({ token }) => {
     setIsEditing(true)
     setCategoryId(category._id)
     setName(category.name)
-    setDescription(category.description)
     
     // Đặt lại hình ảnh và bản xem trước nếu có
     setImage(null)
@@ -147,9 +145,24 @@ const Categories = ({ token }) => {
     setIsEditing(false)
     setCategoryId('')
     setName('')
-    setDescription('')
     setImage(null)
     setPreviewImage(null)
+  }
+
+  // Xử lý sắp xếp danh mục
+  const handleSort = () => {
+    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc'
+    setSortOrder(newSortOrder)
+    
+    const sortedCategories = [...categories].sort((a, b) => {
+      if (newSortOrder === 'asc') {
+        return a.name.localeCompare(b.name)
+      } else {
+        return b.name.localeCompare(a.name)
+      }
+    })
+    
+    setCategories(sortedCategories)
   }
   
   return (
@@ -168,16 +181,6 @@ const Categories = ({ token }) => {
               onChange={(e) => setName(e.target.value)}
               className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500'
               required
-            />
-          </div>
-          
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Mô tả</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500'
             />
           </div>
           
@@ -238,6 +241,15 @@ const Categories = ({ token }) => {
       
       {/* Danh sách danh mục */}
       <div className='overflow-x-auto'>
+        <div className='flex justify-end mb-4'>
+          <button
+            onClick={handleSort}
+            className='flex items-center space-x-1 px-3 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors'
+          >
+            <span>Sắp xếp</span>
+            {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
+          </button>
+        </div>
         <table className='min-w-full divide-y divide-gray-200'>
           <thead className='bg-indigo-50'>
             <tr>
@@ -246,9 +258,6 @@ const Categories = ({ token }) => {
               </th>
               <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
                 Tên
-              </th>
-              <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                Mô tả
               </th>
               <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
                 Thao tác
@@ -275,9 +284,6 @@ const Categories = ({ token }) => {
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
                     {category.name}
                   </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                    {category.description || '-'}
-                  </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                     <button
                       onClick={() => handleEdit(category)}
@@ -296,7 +302,7 @@ const Categories = ({ token }) => {
               ))
             ) : (
               <tr>
-                <td colSpan='4' className='px-6 py-4 text-center text-sm text-gray-500'>
+                <td colSpan='3' className='px-6 py-4 text-center text-sm text-gray-500'>
                   {loading ? 'Đang tải...' : 'Không có danh mục nào'}
                 </td>
               </tr>

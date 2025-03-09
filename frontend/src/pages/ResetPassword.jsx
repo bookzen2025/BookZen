@@ -137,23 +137,27 @@ const ResetPassword = () => {
         </div>
         {/* Form Side */}
         <div className='flexCenter w-full sm:w-1/2'>
-          {!resetSuccess ? (
+          {resetSuccess ? (
+            <div className='text-center'>
+              <h3 className='h3 mb-4'>Đặt lại mật khẩu thành công!</h3>
+              <p className='text-gray-600 mb-6'>Mật khẩu của bạn đã được cập nhật.</p>
+              <button onClick={() => navigate('/login')} className='btn-secondaryOne'>
+                Đăng nhập
+              </button>
+            </div>
+          ) : (
             <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col items-center w-[90%] sm:max-w-md m-auto gap-y-5 text-gray-800'>
               <div className='w-full mb-4'>
                 <h3 className='bold-36'>Đặt lại mật khẩu</h3>
-                <p className='text-gray-500 mt-2'>
-                  Nhập mật khẩu mới của bạn bên dưới.
-                </p>
                 {authError && (
                   <div className="mt-2 text-red-500 text-sm">
                     {authError}
                   </div>
                 )}
-                
                 {requirements.length > 0 && (
                   <div className="mt-2 text-red-500 text-sm">
-                    <p>Mật khẩu phải:</p>
-                    <ul className="list-disc ml-5">
+                    <p>Mật khẩu phải đáp ứng các yêu cầu sau:</p>
+                    <ul className="list-disc list-inside">
                       {requirements.map((req, index) => (
                         <li key={index}>{req}</li>
                       ))}
@@ -190,7 +194,7 @@ const ResetPassword = () => {
               
               <div className='w-full'>
                 <label htmlFor="confirmPassword" className='medium-14'>
-                  Xác nhận mật khẩu
+                  Xác nhận mật khẩu mới
                 </label>
                 <div className="relative">
                   <input 
@@ -223,39 +227,12 @@ const ResetPassword = () => {
                   'Đặt lại mật khẩu'
                 )}
               </button>
-              
-              <div className='w-full flex flex-col gap-y-3 medium-14'>
-                <div 
-                  onClick={() => navigate('/login')} 
-                  className='underline cursor-pointer hover:text-secondaryOne'
-                >
-                  Quay lại Đăng nhập
-                </div>
-              </div>
             </form>
-          ) : (
-            <div className='flex flex-col items-center w-[90%] sm:max-w-md m-auto gap-y-5 text-gray-800'>
-              <div className='w-16 h-16 bg-green-100 rounded-full flexCenter mb-4'>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className='bold-24 text-center'>Đặt lại mật khẩu thành công</h3>
-              <p className='text-center text-gray-500'>
-                Mật khẩu của bạn đã được đặt lại thành công. Bây giờ bạn có thể đăng nhập với mật khẩu mới.
-              </p>
-              <button 
-                onClick={() => navigate('/login')} 
-                className='btn-secondary mt-6'
-              >
-                Đi đến Đăng nhập
-              </button>
-            </div>
           )}
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default ResetPassword
+export default ResetPassword;

@@ -98,43 +98,47 @@ const Wishlist = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {wishlistBooks.map(book => (
-              <div key={book._id} className="bg-white rounded-xl shadow-sm overflow-hidden group">
-                <div className="p-4 flex flex-col h-full">
-                  <div className="flex gap-4 mb-4">
-                    <Link to={`/book/${book._id}`} className="block w-24 h-32 flex-shrink-0">
-                      <div className="w-full h-full relative">
-                        <img 
-                          src={book.image} 
-                          alt={book.name} 
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      </div>
-                    </Link>
-                    
-                    <div className="flex-1">
-                      <Link to={`/book/${book._id}`}>
-                        <h3 className="font-semibold text-lg mb-1 hover:text-secondaryOne transition-colors">{book.name}</h3>
-                      </Link>
-                      <p className="text-sm text-gray-600 mb-2">{book.author}</p>
-                      <p className="font-bold text-secondaryOne">{currency}{book.price.toLocaleString('vi-VN')}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-auto flex gap-2">
+              <div key={book._id} className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="relative group">
+                  <Link to={`/book/${book._id}`}>
+                    <img 
+                      src={book.image} 
+                      alt={book.name} 
+                      className="w-full h-48 object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </Link>
+                  <button
+                    onClick={() => handleRemoveFromWishlist(book._id)}
+                    className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
+                    disabled={isRemoving[book._id]}
+                  >
+                    {isRemoving[book._id] ? (
+                      <div className="h-5 w-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <FaHeart className="text-red-500 text-xl" />
+                    )}
+                  </button>
+                </div>
+                
+                <div className="mt-4">
+                  <Link to={`/book/${book._id}`}>
+                    <h3 className="text-lg font-semibold line-clamp-1 hover:text-secondaryOne transition-colors">
+                      {book.name}
+                    </h3>
+                  </Link>
+                  <p className="text-gray-600 text-sm mt-1">{book.category}</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <p className="text-lg font-bold text-tertiary">{currency}{book.price.toLocaleString('vi-VN')}</p>
                     <button
                       onClick={() => handleAddToCart(book._id)}
-                      className={`flex-1 py-2 px-3 rounded-lg bg-secondaryOne text-white flex items-center justify-center gap-1 transition-all ${isAdding[book._id] ? 'scale-105' : 'hover:bg-opacity-90'}`}
+                      className="p-2 bg-primary rounded-full hover:bg-gray-100 transition-colors"
+                      disabled={isAdding[book._id]}
                     >
-                      <TbShoppingBagPlus />
-                      <span>Thêm vào giỏ</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleRemoveFromWishlist(book._id)}
-                      className={`p-2 rounded-lg border border-gray-200 text-red-500 transition-all ${isRemoving[book._id] ? 'animate-pulse' : 'hover:bg-gray-50'}`}
-                      title="Xóa khỏi danh sách yêu thích"
-                    >
-                      <FaHeart />
+                      {isAdding[book._id] ? (
+                        <div className="h-5 w-5 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <TbShoppingBagPlus className="text-xl text-secondary" />
+                      )}
                     </button>
                   </div>
                 </div>

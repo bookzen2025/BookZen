@@ -14,6 +14,7 @@ const createProduct = async (req, res) => {
             category = "", 
             price = 0, 
             popular = false,
+            newArrivals = false,
             author = "",
             publisher = "",
             publishedYear = "",
@@ -21,7 +22,7 @@ const createProduct = async (req, res) => {
         } = req.body;
 
         console.log("Extracted fields:", {
-            name, description, category, price, popular,
+            name, description, category, price, popular, newArrivals,
             author, publisher, publishedYear, pages
         });
 
@@ -49,6 +50,7 @@ const createProduct = async (req, res) => {
             category: String(category),
             price: Number(price) || 0,
             popular: popular === "true" || popular === true,
+            newArrivals: newArrivals === "true" || newArrivals === true,
             author: String(author || ""),
             publisher: String(publisher || ""),
             publishedYear: publishedYear ? Number(publishedYear) : null,
@@ -134,23 +136,31 @@ const addProductReview = async (req, res) => {
             });
         }
         
-        // Kiểm tra xem sản phẩm có trong đơn hàng nào không
-        let hasPurchased = false;
+        // Kiểm tra xem sản phẩm có trong đơn hàng đã hoàn thành nào không
+        let hasPurchasedAndCompleted = false;
         
         for (const order of orders) {
-            // Kiểm tra trong mảng items của đơn hàng
-            const foundItem = order.items.find(item => item.id === productId);
+            // Kiểm tra trong mảng items của đơn hàng - kiểm tra cả id và _id
+            const foundItem = order.items.find(item => 
+                (item._id === productId) || 
+                (item.id === productId) || 
+                (String(item._id) === String(productId)) ||
+                (String(item.id) === String(productId))
+            );
             
-            if (foundItem) {
-                hasPurchased = true;
+            // Đơn hàng phải đã thanh toán và đã giao hàng (Chấp nhận cả "Delivered" và "Đã giao hàng")
+            const isDelivered = order.status === "Delivered" || order.status === "Đã giao hàng";
+            
+            if (foundItem && order.payment === true && isDelivered) {
+                hasPurchasedAndCompleted = true;
                 break;
             }
         }
         
-        if (!hasPurchased) {
+        if (!hasPurchasedAndCompleted) {
             return res.status(403).json({ 
                 success: false, 
-                message: "Bạn cần mua sản phẩm này trước khi đánh giá" 
+                message: "Bạn cần mua và nhận sản phẩm này trước khi đánh giá" 
             });
         }
         
@@ -181,4 +191,75 @@ const addProductReview = async (req, res) => {
     }
 };
 
-export { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview };
+// Thêm hàm cập nhật sản phẩm
+const updateProduct = async (req, res) => {
+    try {
+        const { id } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ success: false, message: "ID sản phẩm không được cung cấp" });
+        }
+
+        // Destructure với các giá trị mặc định để tránh lỗi undefined
+        const { 
+            name = "", 
+            description = "", 
+            category = "", 
+            price = 0, 
+            popular = false,
+            newArrivals = false,
+            author = "",
+            publisher = "",
+            publishedYear = "",
+            pages = ""
+        } = req.body;
+
+        let updateData = {
+            name: String(name),
+            description: String(description),
+            category: String(category),
+            price: Number(price) || 0,
+            popular: popular === "true" || popular === true,
+            newArrivals: newArrivals === "true" || newArrivals === true,
+            author: String(author || ""),
+            publisher: String(publisher || ""),
+            publishedYear: publishedYear ? Number(publishedYear) : null,
+            pages: pages ? Number(pages) : null,
+        };
+
+        // Chỉ cập nhật hình ảnh nếu có file mới được tải lên
+        if (req.file) {
+            try {
+                const uploadResult = await cloudinary.uploader.upload(req.file.path, { resource_type: "image" });
+                updateData.image = uploadResult.secure_url;
+            } catch (uploadError) {
+                console.error("Lỗi khi tải lên hình ảnh:", uploadError);
+                // Tiếp tục với dữ liệu khác nếu tải lên thất bại
+            }
+        }
+
+        const updatedProduct = await productModel.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProduct) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm" });
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Sản phẩm đã được cập nhật thành công",
+            product: updatedProduct
+        });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật sản phẩm:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi cập nhật sản phẩm" 
+        });
+    }
+};
+
+export { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview, updateProduct };

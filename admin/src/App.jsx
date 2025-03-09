@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import { Route, Routes } from 'react-router-dom'
-import Add from './pages/Add'
-import List from './pages/List'
+import Products from './pages/Products'
 import Orders from './pages/Orders'
 import Dashboard from './pages/Dashboard'
 import Categories from './pages/Categories'
@@ -45,8 +44,7 @@ const App = () => {
             <Sidebar setToken={setToken}/>
             <Routes>
               <Route path='/' element={<Dashboard token={token}/>} />
-              <Route path='/add' element={<Add token={token}/>} />
-              <Route path='/list' element={<List token={token}/>} />
+              <Route path='/products' element={<Products token={token}/>} />
               <Route path='/orders' element={<Orders token={token}/>} />
               <Route path='/categories' element={<Categories token={token}/>} />
               <Route path='/users' element={<Users token={token}/>} />

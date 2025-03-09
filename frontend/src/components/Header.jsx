@@ -79,28 +79,28 @@ const Header = () => {
                                 <button onClick={()=> navigate('/login')} className='btn-outline flexCenter gap-x-2'>
                                     {loading ? (
                                         <div className="h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-1"></div>
-                                    ) : 'Login'}
+                                    ) : 'Đăng nhập'}
                                     <RiUserLine />
                                 </button>
                             )}
                         </div>
                         {isAuthenticated && <>
                             <ul className='bg-white p-1 w-32 ring-1 ring-slate-900/5 rounded absolute right-0 top-7 hidden group-hover:flex flex-col regular-14 shadow-md'>
-                                <li onClick={()=> navigate('/orders')} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer'>Orders</li>
+                                <li onClick={()=> navigate('/orders')} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer'>Đơn hàng</li>
                                 <li onClick={()=> navigate('/wishlist')} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer flex items-center'>
                                     <FaHeart className="mr-1 text-red-500" />
-                                    Wishlist
+                                    Yêu thích
                                 </li>
                                 <li onClick={handleLogout} className='p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer flex items-center'>
                                     {loggingOut ? (
                                         <>
                                             <div className="h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-1"></div>
-                                            Logging out...
+                                            Đang đăng xuất...
                                         </>
                                     ) : (
                                         <>
                                             <BiLogOut className="mr-1" />
-                                            Logout
+                                            Đăng xuất
                                         </>
                                     )}
                                 </li>

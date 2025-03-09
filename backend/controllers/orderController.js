@@ -150,14 +150,24 @@ const checkUserPurchased = async (req, res) => {
             });
         }
         
-        // Kiểm tra xem sản phẩm có trong đơn hàng nào không
+        // Kiểm tra xem sản phẩm có trong đơn hàng hoàn thành nào không
+        // Đơn hàng hoàn thành là đơn hàng đã thanh toán và có trạng thái "Delivered"
         let hasPurchased = false;
         
         for (const order of orders) {
-            // Kiểm tra trong mảng items của đơn hàng
-            const foundItem = order.items.find(item => item.id === productId);
+            // Tìm sản phẩm trong đơn hàng - kiểm tra cả id và _id
+            const foundItem = order.items.find(item => 
+                (item._id === productId) || 
+                (item.id === productId) || 
+                (String(item._id) === String(productId)) ||
+                (String(item.id) === String(productId))
+            );
             
-            if (foundItem) {
+            // Kiểm tra xem đơn hàng đã thanh toán và đã giao hàng chưa
+            // Chấp nhận cả "Delivered" và "Đã giao hàng"
+            const isDelivered = order.status === "Delivered" || order.status === "Đã giao hàng";
+            
+            if (foundItem && order.payment === true && isDelivered) {
                 hasPurchased = true;
                 break;
             }
@@ -166,7 +176,7 @@ const checkUserPurchased = async (req, res) => {
         res.json({ 
             success: true, 
             hasPurchased,
-            message: hasPurchased ? "Người dùng đã mua sản phẩm này" : "Người dùng chưa mua sản phẩm này"
+            message: hasPurchased ? "Người dùng đã mua và nhận sản phẩm này" : "Người dùng chưa mua hoặc chưa nhận sản phẩm này"
         });
     } catch (error) {
         console.log(error);

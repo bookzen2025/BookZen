@@ -11,30 +11,30 @@ import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 // Schema for login form
 const loginSchema = yup.object().shape({
   email: yup.string()
-    .required('Email is required')
-    .email('Please enter a valid email'),
+    .required('Email là bắt buộc')
+    .email('Vui lòng nhập email hợp lệ'),
   password: yup.string()
-    .required('Password is required')
+    .required('Mật khẩu là bắt buộc')
 });
 
 // Schema for registration form
 const registerSchema = yup.object().shape({
   name: yup.string()
-    .required('Name is required')
-    .min(2, 'Name must be at least 2 characters'),
+    .required('Tên là bắt buộc')
+    .min(2, 'Tên phải có ít nhất 2 ký tự'),
   email: yup.string()
-    .required('Email is required')
-    .email('Please enter a valid email'),
+    .required('Email là bắt buộc')
+    .email('Vui lòng nhập email hợp lệ'),
   password: yup.string()
-    .required('Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .matches(/[0-9]/, 'Password must contain at least one number')
-    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
+    .required('Mật khẩu là bắt buộc')
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+    .matches(/[A-Z]/, 'Mật khẩu phải chứa ít nhất một chữ hoa')
+    .matches(/[a-z]/, 'Mật khẩu phải chứa ít nhất một chữ thường')
+    .matches(/[0-9]/, 'Mật khẩu phải chứa ít nhất một số')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt'),
   confirmPassword: yup.string()
-    .required('Confirm password is required')
-    .oneOf([yup.ref('password')], 'Passwords must match')
+    .required('Xác nhận mật khẩu là bắt buộc')
+    .oneOf([yup.ref('password')], 'Mật khẩu không khớp')
 });
 
 const Login = () => {
@@ -109,10 +109,10 @@ const Login = () => {
     
     const getStrengthLabel = (strength) => {
       if (strength === 0) return '';
-      if (strength <= 2) return 'Weak';
-      if (strength <= 3) return 'Fair';
-      if (strength <= 4) return 'Good';
-      return 'Strong';
+      if (strength <= 2) return 'Yếu';
+      if (strength <= 3) return 'Trung bình';
+      if (strength <= 4) return 'Tốt';
+      return 'Mạnh';
     };
     
     return (
@@ -164,12 +164,12 @@ const Login = () => {
             {currState === "Sign Up" && (
               <div className='w-full'>
                 <label htmlFor="name" className='medium-14'>
-                  Name
+                  Tên
                 </label>
                 <input 
                   {...register("name")} 
                   type="text" 
-                  placeholder='Name' 
+                  placeholder='Nhập tên' 
                   className={`w-full px-3 py-1 ring-1 ${errors.name ? 'ring-red-500' : 'ring-slate-900/10'} rounded bg-primary mt-1`} 
                 />
                 {errors.name && (
@@ -185,7 +185,7 @@ const Login = () => {
               <input 
                 {...register("email")} 
                 type="email" 
-                placeholder='Email' 
+                placeholder='Nhập email' 
                 className={`w-full px-3 py-1 ring-1 ${errors.email ? 'ring-red-500' : 'ring-slate-900/10'} rounded bg-primary mt-1`} 
               />
               {errors.email && (
@@ -195,13 +195,13 @@ const Login = () => {
             
             <div className='w-full'>
               <label htmlFor="password" className='medium-14'>
-                Password
+                Mật khẩu
               </label>
               <div className="relative">
                 <input 
                   {...register("password")} 
                   type={showPassword ? "text" : "password"} 
-                  placeholder='Password' 
+                  placeholder='Nhập mật khẩu' 
                   className={`w-full px-3 py-1 ring-1 ${errors.password ? 'ring-red-500' : 'ring-slate-900/10'} rounded bg-primary mt-1 pr-10`} 
                 />
                 <button 
@@ -224,13 +224,13 @@ const Login = () => {
             {currState === "Sign Up" && (
               <div className='w-full'>
                 <label htmlFor="confirmPassword" className='medium-14'>
-                  Confirm Password
+                  Xác nhận mật khẩu
                 </label>
                 <div className="relative">
                   <input 
                     {...register("confirmPassword")} 
                     type={showConfirmPassword ? "text" : "password"} 
-                    placeholder='Confirm Password' 
+                    placeholder='Xác nhận mật khẩu' 
                     className={`w-full px-3 py-1 ring-1 ${errors.confirmPassword ? 'ring-red-500' : 'ring-slate-900/10'} rounded bg-primary mt-1 pr-10`} 
                   />
                   <button 

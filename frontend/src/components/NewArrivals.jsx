@@ -14,15 +14,15 @@ const NewArrivals = () => {
     const {books} = useContext(ShopContext)
     const [newArrivals, setNewArrivals] = useState([])
 
-    // Extract the first new books as new arivals
+    // Chỉ lấy những sách được đánh dấu là newArrivals: true
     useEffect(()=>{
-        const data = books.slice(0, 7);
-        setNewArrivals(data.reverse())
+        const filteredBooks = books.filter(book => book.newArrivals === true);
+        setNewArrivals(filteredBooks);
     }, [books])
 
     return (
         <section className='max-padd-container py-16 bg-white'>
-            <Title title1={'New'} title2={'Arrivals'} titleStyles={'pb-10'} paraStyles={'!block'} />
+            <Title title1={'Sách'} title2={'Mới'} titleStyles={'pb-10'} paraStyles={'!block'} />
             {/* Swiper container */}
             <Swiper
                 autoplay={{

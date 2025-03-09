@@ -3,6 +3,7 @@ import { FaSquarePlus } from "react-icons/fa6"
 import { FaListAlt, FaTags, FaUsers } from "react-icons/fa"
 import { MdFactCheck, MdDashboard } from "react-icons/md"
 import { BiLogOut } from "react-icons/bi"
+import { MdProductionQuantityLimits } from "react-icons/md"
 import logo from "../assets/logo.png"
 import { Link, NavLink } from 'react-router-dom'
 
@@ -20,13 +21,9 @@ const Sidebar = ({setToken}) => {
                         <MdDashboard />
                         <div className='hidden lg:flex'>Dashboard</div>
                     </NavLink>
-                    <NavLink to={'/add'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <FaSquarePlus />
-                        <div className='hidden lg:flex'>Add Item</div>
-                    </NavLink>
-                    <NavLink to={'/list'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <FaListAlt />
-                        <div className='hidden lg:flex'>List</div>
+                    <NavLink to={'/products'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
+                        <MdProductionQuantityLimits />
+                        <div className='hidden lg:flex'>Sản phẩm</div>
                     </NavLink>
                     <NavLink to={'/categories'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <FaTags />

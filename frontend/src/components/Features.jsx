@@ -11,34 +11,34 @@ const Features = () => {
         <div className='flexCenter flex-col gap-3'>
           <img src={filter} alt="featureIcon" height={44} width={44} />
           <div className='flexCenter flex-col'>
-            <h5 className='h5'>Advanced Search and Filters</h5>
+            <h5 className='h5'>Tìm kiếm và lọc nâng cao</h5>
             <hr className='w-8 bg-secondary h-1 rounded-full border-none'/>
           </div>
-          <p className='text-center'>Effortlessly search books by title, author, genre, or price range.</p>
+          <p className='text-center'>Dễ dàng tìm kiếm sách theo tên, tác giả, thể loại hoặc khoảng giá.</p>
         </div>
         <div className='flexCenter flex-col gap-3'>
           <img src={rating} alt="featureIcon" height={44} width={44} />
           <div className='flexCenter flex-col'>
-            <h5 className='h5'>User Reviews and Ratings</h5>
+            <h5 className='h5'>Đánh giá và xếp hạng</h5>
             <hr className='w-8 bg-secondary h-1 rounded-full border-none'/>
           </div>
-          <p className='text-center'>Customers can share reviews, rate books, and guide future readers.</p>
+          <p className='text-center'>Khách hàng có thể chia sẻ đánh giá, xếp hạng sách và hướng dẫn người đọc khác.</p>
         </div>
         <div className='flexCenter flex-col gap-3'>
           <img src={wishlist} alt="featureIcon" height={44} width={44} />
           <div className='flexCenter flex-col'>
-            <h5 className='h5'>Wishlist and Favorites</h5>
+            <h5 className='h5'>Danh sách yêu thích</h5>
             <hr className='w-8 bg-secondary h-1 rounded-full border-none'/>
           </div>
-          <p className='text-center'>Save books to wishlist for future purchases or easy access.</p>
+          <p className='text-center'>Lưu sách vào danh sách yêu thích để mua sau hoặc truy cập dễ dàng.</p>
         </div>
         <div className='flexCenter flex-col gap-3'>
           <img src={secure} alt="featureIcon" height={44} width={44} />
           <div className='flexCenter flex-col'>
-            <h5 className='h5'>Secure Online Payments</h5>
+            <h5 className='h5'>Thanh toán trực tuyến an toàn</h5>
             <hr className='w-8 bg-secondary h-1 rounded-full border-none'/>
           </div>
-          <p className='text-center'>Enjoy seamless checkout with multiple secure payment options.</p>
+          <p className='text-center'>Thanh toán dễ dàng với nhiều phương thức thanh toán an toàn.</p>
         </div>
       </div>
     </section>
