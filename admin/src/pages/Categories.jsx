@@ -75,7 +75,7 @@ const Categories = ({ token }) => {
         response = await axios.post(`${backend_url}/api/category/update`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            token
+            Authorization: token
           }
         })
       } else {
@@ -83,7 +83,7 @@ const Categories = ({ token }) => {
         response = await axios.post(`${backend_url}/api/category/create`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            token
+            Authorization: token
           }
         })
       }
@@ -112,7 +112,7 @@ const Categories = ({ token }) => {
     try {
       setLoading(true)
       const response = await axios.post(`${backend_url}/api/category/delete`, { id }, {
-        headers: { token }
+        headers: { Authorization: token }
       })
       
       if (response.data.success) {

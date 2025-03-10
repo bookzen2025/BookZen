@@ -8,7 +8,7 @@ const deliveryCharges = 120000
 // Place order using Cash on Delivery
 const placeOrder = async (req, res) => {
     try {
-        const { userId, items, amount, address } = req.body
+        const { userId, items, amount, address, promoCode } = req.body
 
         const orderData = {
             userId,
@@ -17,7 +17,8 @@ const placeOrder = async (req, res) => {
             address,
             paymentMethod: "COD",
             payment: false,
-            date: Date.now()
+            date: Date.now(),
+            promoCode
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()
@@ -35,7 +36,7 @@ const placeOrder = async (req, res) => {
 // Place order using Bank Transfer
 const placeBankTransfer = async (req, res) => {
     try {
-        const { userId, items, amount, address } = req.body
+        const { userId, items, amount, address, promoCode } = req.body
 
         const orderData = {
             userId,
@@ -44,7 +45,8 @@ const placeBankTransfer = async (req, res) => {
             address,
             paymentMethod: "Bank Transfer",
             payment: false,
-            date: Date.now()
+            date: Date.now(),
+            promoCode
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()

@@ -36,7 +36,7 @@ const Dashboard = ({ token }) => {
       const response = await axios.post(
         `${backend_url}/api/analytics/dashboard`, 
         { dateRange }, 
-        { headers: { token } }
+        { headers: { Authorization: token } }
       );
       
       if (response.data.success) {

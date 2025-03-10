@@ -14,35 +14,40 @@ import {
     getAllUsers,
     getUserById,
     updateUser,
-    deleteUser
+    deleteUser,
+    verifyAdminToken
 } from "../controllers/userController.js"
 import { loginRateLimiter, passwordResetRateLimiter } from "../middleware/rateLimiter.js"
 import { csrfProtection } from "../middleware/csrf.js"
 import authUser from "../middleware/auth.js"
+import adminAuth from "../middleware/adminAuth.js"
 
 const userRouter = express.Router()
 
-// Apply CSRF protection to all routes
-userRouter.use(csrfProtection)
+// Không áp dụng CSRF protection cho tất cả các routes nữa
+// userRouter.use(csrfProtection)
 
-// Apply rate limiters to specific routes
-userRouter.post('/register', handleUserRegister)
-userRouter.post('/login', loginRateLimiter, handleUserLogin)
-userRouter.post('/admin', loginRateLimiter, handleAdminLogin)
-userRouter.post('/forgot-password', passwordResetRateLimiter, handleForgotPassword)
-userRouter.post('/reset-password', handleResetPassword)
-userRouter.post('/refresh-token', handleTokenRefresh)
-userRouter.post('/logout', authUser, handleLogout)
+// Route đăng nhập không cần CSRF protection
+userRouter.post('/register', csrfProtection, handleUserRegister)
+userRouter.post('/login', loginRateLimiter, csrfProtection, handleUserLogin)
+userRouter.post('/admin', loginRateLimiter, handleAdminLogin) // Không có CSRF cho route đăng nhập admin
+userRouter.post('/forgot-password', passwordResetRateLimiter, csrfProtection, handleForgotPassword)
+userRouter.post('/reset-password', csrfProtection, handleResetPassword)
+userRouter.post('/refresh-token', csrfProtection, handleTokenRefresh)
+userRouter.post('/logout', authUser, csrfProtection, handleLogout)
+
+// Xác thực token admin
+userRouter.get('/verify-admin', verifyAdminToken)
 
 // Wishlist routes
-userRouter.post('/wishlist/add', authUser, addToWishlist)
-userRouter.post('/wishlist/remove', authUser, removeFromWishlist)
-userRouter.post('/wishlist/get', authUser, getWishlist)
+userRouter.post('/wishlist/add', authUser, csrfProtection, addToWishlist)
+userRouter.post('/wishlist/remove', authUser, csrfProtection, removeFromWishlist)
+userRouter.post('/wishlist/get', authUser, csrfProtection, getWishlist)
 
-// Admin user management routes
-userRouter.get('/admin/users', getAllUsers)
-userRouter.get('/admin/users/:id', getUserById)
-userRouter.put('/admin/users/:id', updateUser)
-userRouter.delete('/admin/users/:id', deleteUser)
+// Admin user management routes - Thêm adminAuth và loại bỏ CSRF protection không cần thiết
+userRouter.get('/admin/users', adminAuth, getAllUsers)
+userRouter.get('/admin/users/:id', adminAuth, getUserById)
+userRouter.put('/admin/users/:id', adminAuth, updateUser)
+userRouter.delete('/admin/users/:id', adminAuth, deleteUser)
 
 export default userRouter

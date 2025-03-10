@@ -4,10 +4,19 @@ import { FaListAlt, FaTags, FaUsers } from "react-icons/fa"
 import { MdFactCheck, MdDashboard } from "react-icons/md"
 import { BiLogOut } from "react-icons/bi"
 import { MdProductionQuantityLimits } from "react-icons/md"
+import { MdLocalOffer } from "react-icons/md"
 import logo from "../assets/logo.png"
 import { Link, NavLink } from 'react-router-dom'
 
 const Sidebar = ({setToken}) => {
+    // Hàm xử lý đăng xuất
+    const handleLogout = () => {
+        // Xóa token khỏi localStorage
+        localStorage.removeItem('token');
+        // Cập nhật state token trong App
+        setToken('');
+    }
+
     return (
         <div className='max-sm:flexCenter max-xs:pb-3 rounded bg-white pb-3 sm:w-1/5 sm:min-h-screen'>
             <div className='flex flex-col gap-y-6 max-sm:items-center sm:flex-col pt-4 sm:pt-14'>
@@ -37,11 +46,18 @@ const Sidebar = ({setToken}) => {
                         <FaUsers />
                         <div className='hidden lg:flex'>Users</div>
                     </NavLink>
+                    <NavLink to={'/promotions'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
+                        <MdLocalOffer />
+                        <div className='hidden lg:flex'>Khuyến mãi</div>
+                    </NavLink>
                     {/* Logout button */}
-                    <div className='max-sm:ml-5 sm:mt-72'>
-                        <button className='flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl'>
-                            <BiLogOut onClick={()=> setToken('')} className='text-lg'/>
-                            <div className='hidden lg:flex'>Logout</div>
+                    <div className='max-sm:ml-5 sm:mt-60'>
+                        <button 
+                            onClick={handleLogout}
+                            className='flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl hover:bg-gray-100 w-full'
+                        >
+                            <BiLogOut className='text-lg'/>
+                            <div className='hidden lg:flex'>Đăng xuất</div>
                         </button>
                     </div>
                 </div>

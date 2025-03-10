@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { FaEdit, FaTrash } from 'react-icons/fa'
 import axios from 'axios'
 import { backend_url } from '../App'
-import { showSuccessToast, showErrorToast } from '../utils/toastConfig'
+import { toast } from 'react-toastify'
 
 const Users = ({ token }) => {
   const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     email: ''
   })
-  const [csrfToken, setCsrfToken] = useState('')
 
-  // Lấy CSRF token khi component được mount
-  useEffect(() => {
-    // Tạo CSRF token ngẫu nhiên nếu chưa có
-    const token = localStorage.getItem('csrfToken') || Math.random().toString(36).substring(2, 15)
-    localStorage.setItem('csrfToken', token)
-    setCsrfToken(token)
-  }, [])
+  // Hiển thị thông báo lỗi
+  const showErrorToast = (message) => toast.error(message)
+  // Hiển thị thông báo thành công
+  const showSuccessToast = (message) => toast.success(message)
 
   // Fetch users
   const fetchUsers = async () => {
@@ -28,9 +23,7 @@ const Users = ({ token }) => {
       setLoading(true)
       const response = await axios.get(`${backend_url}/api/user/admin/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-csrf-token': csrfToken,
-          'csrf-token': csrfToken
+          Authorization: token
         }
       })
       if (response.data.success) {
@@ -47,12 +40,10 @@ const Users = ({ token }) => {
   }
 
   useEffect(() => {
-    if (csrfToken) {
-      fetchUsers()
-    }
-  }, [token, csrfToken])
+    fetchUsers()
+  }, [token])
 
-  // Handle edit user
+  // Xử lý khi chọn chỉnh sửa người dùng
   const handleEdit = (user) => {
     setEditingUser(user)
     setFormData({
@@ -61,7 +52,7 @@ const Users = ({ token }) => {
     })
   }
 
-  // Handle form input change
+  // Xử lý khi thay đổi form
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -69,171 +60,170 @@ const Users = ({ token }) => {
     })
   }
 
-  // Handle update user
+  // Xử lý khi cập nhật thông tin người dùng
   const handleUpdate = async (e) => {
     e.preventDefault()
+    if (!editingUser) return
+
     try {
+      setLoading(true)
       const response = await axios.put(`${backend_url}/api/user/admin/users/${editingUser._id}`, formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-csrf-token': csrfToken,
-          'csrf-token': csrfToken
+          Authorization: token
         }
       })
+
       if (response.data.success) {
-        showSuccessToast('Cập nhật người dùng thành công')
-        setEditingUser(null)
+        showSuccessToast('Cập nhật thông tin người dùng thành công')
         fetchUsers()
+        handleCancel()
       } else {
-        showErrorToast(response.data.message || 'Không thể cập nhật người dùng')
+        showErrorToast(response.data.message || 'Không thể cập nhật thông tin người dùng')
       }
     } catch (error) {
       console.error('Error updating user:', error)
-      showErrorToast('Đã xảy ra lỗi khi cập nhật người dùng')
+      showErrorToast('Đã xảy ra lỗi khi cập nhật thông tin người dùng')
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Handle delete user
+  // Xử lý khi xóa người dùng
   const handleDelete = async (userId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
-      try {
-        const response = await axios.delete(`${backend_url}/api/user/admin/users/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-csrf-token': csrfToken,
-            'csrf-token': csrfToken
-          }
-        })
-        if (response.data.success) {
-          showSuccessToast('Xóa người dùng thành công')
-          fetchUsers()
-        } else {
-          showErrorToast(response.data.message || 'Không thể xóa người dùng')
+    if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return
+
+    try {
+      setLoading(true)
+      const response = await axios.delete(`${backend_url}/api/user/admin/users/${userId}`, {
+        headers: {
+          Authorization: token
         }
-      } catch (error) {
-        console.error('Error deleting user:', error)
-        showErrorToast('Đã xảy ra lỗi khi xóa người dùng')
+      })
+
+      if (response.data.success) {
+        showSuccessToast('Xóa người dùng thành công')
+        fetchUsers()
+      } else {
+        showErrorToast(response.data.message || 'Không thể xóa người dùng')
       }
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      showErrorToast('Đã xảy ra lỗi khi xóa người dùng')
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Cancel editing
+  // Hủy chỉnh sửa
   const handleCancel = () => {
     setEditingUser(null)
+    setFormData({
+      name: '',
+      email: ''
+    })
   }
 
   return (
-    <div className='w-full sm:w-4/5 bg-white p-4 sm:p-10 overflow-y-auto'>
-      <h1 className='text-2xl font-bold mb-6'>Quản lý người dùng</h1>
+    <div className="w-full p-4 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Quản lý người dùng</h1>
 
-      {/* Edit User Form */}
+      {/* Form chỉnh sửa người dùng */}
       {editingUser && (
-        <div className='bg-gray-100 p-4 rounded-lg mb-6'>
-          <h2 className='text-xl font-semibold mb-4'>Chỉnh sửa người dùng</h2>
-          <form onSubmit={handleUpdate} className='space-y-4'>
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>Tên</label>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-xl font-semibold mb-4">Chỉnh sửa thông tin người dùng</h2>
+          <form onSubmit={handleUpdate}>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2">Tên</label>
               <input
-                type='text'
-                name='name'
+                type="text"
+                name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500'
+                className="w-full px-3 py-2 border rounded"
                 required
               />
             </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>Email</label>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2">Email</label>
               <input
-                type='email'
-                name='email'
+                type="email"
+                name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500'
+                className="w-full px-3 py-2 border rounded"
                 required
               />
             </div>
-            <div className='flex space-x-4'>
+            <div className="flex justify-end">
               <button
-                type='submit'
-                className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-              >
-                Cập nhật
-              </button>
-              <button
-                type='button'
+                type="button"
                 onClick={handleCancel}
-                className='inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                className="px-4 py-2 bg-gray-300 rounded mr-2"
               >
                 Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+                disabled={loading}
+              >
+                {loading ? 'Đang xử lý...' : 'Cập nhật'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Users Table */}
-      {loading ? (
-        <div className='text-center py-4'>Đang tải...</div>
-      ) : (
-        <div className='overflow-x-auto'>
-          <table className='min-w-full divide-y divide-gray-200'>
-            <thead className='bg-indigo-50'>
+      {/* Bảng danh sách người dùng */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left">ID</th>
+              <th className="px-4 py-3 text-left">Tên</th>
+              <th className="px-4 py-3 text-left">Email</th>
+              <th className="px-4 py-3 text-left">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {loading && !users.length ? (
               <tr>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                  ID
-                </th>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                  Tên
-                </th>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                  Email
-                </th>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                  Thao tác
-                </th>
+                <td colSpan="4" className="px-4 py-3 text-center">
+                  Đang tải...
+                </td>
               </tr>
-            </thead>
-            <tbody className='bg-white divide-y divide-gray-200'>
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user._id}>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                      {user._id.substring(0, 8)}...
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                      {user.name}
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                      {user.email}
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className='text-indigo-600 hover:text-indigo-900 mr-4'
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user._id)}
-                        className='text-red-600 hover:text-red-900'
-                      >
-                        <FaTrash />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan='4' className='px-6 py-4 text-center text-sm text-gray-500'>
-                    Không có người dùng nào
+            ) : !users.length ? (
+              <tr>
+                <td colSpan="4" className="px-4 py-3 text-center">
+                  Không có người dùng nào
+                </td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <tr key={user._id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">{user._id}</td>
+                  <td className="px-4 py-3">{user.name}</td>
+                  <td className="px-4 py-3">{user.email}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleEdit(user)}
+                      className="px-3 py-1 bg-blue-100 text-blue-600 rounded mr-2"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user._id)}
+                      className="px-3 py-1 bg-red-100 text-red-600 rounded"
+                    >
+                      Xóa
+                    </button>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -121,9 +121,9 @@ const Products = ({ token }) => {
       let response
       if (editMode) {
         formData.append("id", currentProductId)
-        response = await axios.post(`${backend_url}/api/product/update`, formData, { headers: { token } })
+        response = await axios.post(`${backend_url}/api/product/update`, formData, { headers: { Authorization: token } })
       } else {
-        response = await axios.post(`${backend_url}/api/product/create`, formData, { headers: { token } })
+        response = await axios.post(`${backend_url}/api/product/create`, formData, { headers: { Authorization: token } })
       }
       
       if (response.data.success) {
@@ -164,7 +164,7 @@ const Products = ({ token }) => {
   // Hàm để xóa sản phẩm
   const removeProduct = async (id) => {
     try {
-      const response = await axios.post(`${backend_url}/api/product/delete`, { id }, { headers: { token } })
+      const response = await axios.post(`${backend_url}/api/product/delete`, { id }, { headers: { Authorization: token } })
       if (response.data.success) {
         toast.success(response.data.message)
         // Nếu đang chỉnh sửa sản phẩm bị xóa, reset form

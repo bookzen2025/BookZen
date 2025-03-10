@@ -10,6 +10,7 @@ const orderSchema = new mongoose.Schema({
     payment:{type:Boolean, required:true, default: false},
     transactionId:{type:String}, // New field for bank transfer reference
     date:{type:Number, required:true},
+    promoCode:{type:String}, // Mã khuyến mãi được áp dụng
 })
 
 const orderModel = mongoose.models.order || mongoose.model('order', orderSchema)

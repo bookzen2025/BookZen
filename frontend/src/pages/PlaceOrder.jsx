@@ -11,6 +11,10 @@ import { useAuth } from '../hooks/useAuth'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import vietnamProvinces from '../data/vietnam-provinces'
+import { GoArrowRight } from 'react-icons/go'
+import { BiArrowBack } from 'react-icons/bi'
+import { FaCheck, FaTimes } from 'react-icons/fa'
+import { FiInfo } from 'react-icons/fi'
 
 // Create schema for shipping address validation
 const shippingSchema = yup.object().shape({
@@ -24,8 +28,117 @@ const shippingSchema = yup.object().shape({
   address: yup.string().required('Địa chỉ cụ thể là bắt buộc'),
 });
 
+// Tạo component nội bộ để tránh điều hướng không mong muốn
+const PlaceOrderPromoInput = () => {
+  const { 
+    promoCode, 
+    setPromoCode, 
+    validatePromoCode, 
+    promoError, 
+    promoLoading,
+    activePromotion,
+    discountAmount,
+    clearPromotion,
+    currency,
+    getCartAmount
+  } = useContext(ShopContext)
+
+  const handleApplyPromo = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    try {
+      const result = await validatePromoCode(promoCode)
+    } catch (error) {
+      // Xử lý lỗi nếu có
+    }
+    
+    return false
+  }
+
+  // Hiển thị thông tin khuyến mãi đã áp dụng
+  const renderAppliedPromotion = () => {
+    if (!activePromotion) return null
+
+    return (
+      <div className="mt-3 bg-green-50 border border-green-200 p-3 rounded-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="flex items-center">
+              <FaCheck className="text-green-500 mr-2" />
+              <span className="font-medium">{activePromotion.name}</span>
+            </div>
+            <div className="text-xs text-gray-600 mt-1">{activePromotion.description}</div>
+            <div className="text-sm font-medium text-green-600 mt-1">
+              Giảm: {currency}{discountAmount.toLocaleString('vi-VN')}
+            </div>
+          </div>
+          <button 
+            onClick={clearPromotion}
+            className="text-gray-500 hover:text-red-500"
+            title="Hủy áp dụng"
+          >
+            <FaTimes />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full mt-4">
+      <div className="text-gray-700 font-medium mb-2">Mã khuyến mãi</div>
+      
+      {activePromotion ? (
+        // Hiển thị thông tin khuyến mãi đã áp dụng
+        renderAppliedPromotion()
+      ) : (
+        // Form nhập mã
+        <div className="flex">
+          <input
+            type="text"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+            placeholder="Nhập mã giảm giá"
+            className="flex-1 border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleApplyPromo}
+            disabled={promoLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg transition-colors disabled:bg-blue-300"
+          >
+            {promoLoading ? "Đang kiểm tra..." : "Áp dụng"}
+          </button>
+        </div>
+      )}
+      
+      {/* Hiển thị lỗi */}
+      {promoError && (
+        <div className="mt-2 text-red-500 text-sm flex items-start">
+          <FiInfo className="mr-1 mt-0.5 flex-shrink-0" />
+          <span>{promoError}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const PlaceOrder = () => {
-  const { books, navigate, token, cartItems, setCartItems, getCartAmount, delivery_charges, backendUrl, currency } = useContext(ShopContext)
+  const { 
+    books, 
+    navigate, 
+    token, 
+    cartItems, 
+    setCartItems, 
+    getCartAmount, 
+    getFinalAmount, 
+    delivery_charges, 
+    backendUrl, 
+    currency, 
+    activePromotion,
+    discountAmount,
+    applyPromotion 
+  } = useContext(ShopContext)
   const { isAuthenticated, user } = useAuth()
   const [method, setMethod] = useState('cod')
   const [orderPlaced, setOrderPlaced] = useState(false)
@@ -118,7 +231,8 @@ const PlaceOrder = () => {
       let orderData = {
         address: addressData,
         items: orderItems,
-        amount: getCartAmount() + delivery_charges
+        amount: getFinalAmount() + delivery_charges,
+        promoCode: activePromotion ? activePromotion.code : null
       }
 
       switch (method) {
@@ -132,6 +246,11 @@ const PlaceOrder = () => {
             } 
           })
           if (response.data.success) {
+            // Tăng số lượt sử dụng mã khuyến mãi nếu có
+            if (activePromotion) {
+              await applyPromotion();
+            }
+            
             // Xóa giỏ hàng trước
             setCartItems({});
             
@@ -153,10 +272,15 @@ const PlaceOrder = () => {
             } 
           })
           if (responseBankTransfer.data.success) {
+            // Tăng số lượt sử dụng mã khuyến mãi nếu có
+            if (activePromotion) {
+              await applyPromotion();
+            }
+            
             // Lưu thông tin đơn hàng và hiển thị màn hình thanh toán
             setOrderInfo({
               orderId: responseBankTransfer.data.orderId,
-              amount: getCartAmount() + delivery_charges,
+              amount: getFinalAmount() + delivery_charges,
               items: orderItems,
               address: addressData
             })
@@ -233,6 +357,14 @@ const PlaceOrder = () => {
                     <span>{currency}{(item.price * item.quantity).toLocaleString('vi-VN')}</span>
                   </div>
                 ))}
+                
+                {/* Hiển thị thông tin khuyến mãi nếu có */}
+                {activePromotion && discountAmount > 0 && (
+                  <div className='flex justify-between border-b pb-2 mb-2 text-green-600'>
+                    <span>Khuyến mãi: {activePromotion.code}</span>
+                    <span>-{currency}{discountAmount.toLocaleString('vi-VN')}</span>
+                  </div>
+                )}
                 
                 <div className='flex justify-between border-b pb-2 mb-2'>
                   <span>Phí vận chuyển</span>
@@ -410,6 +542,13 @@ const PlaceOrder = () => {
           {/* Right side */}
           <div className='flex flex-1 flex-col'>
             <CartTotal />
+            
+            {/* Promotion Code */}
+            <div className='my-6'>
+              <h3 className='bold-20 mb-5'>Mã <span className='text-secondary'>khuyến mãi</span></h3>
+              <PlaceOrderPromoInput />
+            </div>
+            
             {/* Payment method */}
             <div className='my-6'>
               <h3 className='bold-20 mb-5'>Phương thức <span className='text-secondary'>thanh toán</span></h3>

@@ -36,6 +36,43 @@ const isStrongPassword = (password) => {
     };
 }
 
+// Hàm xác thực token admin
+const verifyAdminToken = async (req, res) => {
+    try {
+        // Chấp nhận cả hai định dạng token header
+        const token = req.headers.authorization || req.headers.token;
+        
+        if (!token) {
+            return res.status(401).json({ success: false, message: "Không tìm thấy token" });
+        }
+        
+        try {
+            // Xác thực token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            
+            // Kiểm tra xem token có phải của admin hay không
+            if (!decoded || decoded.id !== 'admin' || decoded.role !== 'admin') {
+                return res.status(401).json({ success: false, message: "Token không hợp lệ" });
+            }
+            
+            // Kiểm tra thêm checksum nếu cần
+            const expectedChecksum = process.env.ADMIN_EMAIL + process.env.ADMIN_PASS;
+            if (decoded.checksum !== expectedChecksum) {
+                return res.status(401).json({ success: false, message: "Token không hợp lệ" });
+            }
+            
+            // Token hợp lệ
+            return res.json({ success: true, message: "Token hợp lệ" });
+        } catch (error) {
+            console.error("JWT verification error:", error);
+            return res.status(401).json({ success: false, message: "Token không hợp lệ hoặc đã hết hạn" });
+        }
+    } catch (error) {
+        console.error("Lỗi xác thực token admin:", error);
+        return res.status(500).json({ success: false, message: "Lỗi server" });
+    }
+};
+
 // Controller function to handle user login
 const handleUserLogin = async (req, res) => {
     try {
@@ -221,15 +258,42 @@ const handleLogout = async (req, res) => {
 const handleAdminLogin = async (req, res) => {
     try {
         const {email, password} = req.body
+        
         if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASS){
-            const token = jwt.sign(email + password, process.env.JWT_SECRET, { expiresIn: '1d' })
-            res.json({success:true, token})
-        }else{
-            res.json({success:false, message:"Invalid credentials"})
+            try {
+                // Sử dụng object làm payload thay vì string
+                const token = jwt.sign(
+                    { 
+                        id: "admin", 
+                        email: email,
+                        role: "admin",
+                        checksum: email + password // Vẫn lưu checksum để kiểm tra
+                    }, 
+                    process.env.JWT_SECRET, 
+                    { expiresIn: '1d' }
+                );
+                return res.json({success: true, token});
+            } catch (jwtError) {
+                console.error("Lỗi khi tạo JWT token:", jwtError);
+                return res.status(500).json({
+                    success: false, 
+                    message: "Lỗi khi tạo token đăng nhập",
+                    error: jwtError.message
+                });
+            }
+        } else {
+            return res.status(401).json({
+                success: false, 
+                message: "Email hoặc mật khẩu không chính xác"
+            });
         }
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        console.error("Lỗi đăng nhập admin:", error);
+        return res.status(500).json({
+            success: false, 
+            message: "Lỗi server khi đăng nhập admin",
+            error: error.message
+        });
     }
 }
 
@@ -461,152 +525,124 @@ const getWishlist = async (req, res) => {
 // Admin user management functions
 const getAllUsers = async (req, res) => {
     try {
-        // Kiểm tra token admin
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ success: false, message: 'Unauthorized access' });
-        }
-        
-        const token = authHeader.split(' ')[1];
-        try {
-            // Verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            // Kiểm tra xem token có phải của admin không
-            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
-                return res.status(401).json({ success: false, message: 'Unauthorized access' });
-            }
-        } catch (error) {
-            return res.status(401).json({ success: false, message: 'Invalid token' });
-        }
-
         // Lấy danh sách người dùng, loại bỏ trường password
         const users = await userModel.find({}).select('-password -refreshToken');
         res.json({ success: true, users });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Lỗi khi lấy danh sách người dùng:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Đã xảy ra lỗi khi lấy danh sách người dùng" 
+        });
     }
 };
 
 const getUserById = async (req, res) => {
     try {
-        // Kiểm tra token admin
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ success: false, message: 'Unauthorized access' });
-        }
-        
-        const token = authHeader.split(' ')[1];
-        try {
-            // Verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            // Kiểm tra xem token có phải của admin không
-            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
-                return res.status(401).json({ success: false, message: 'Unauthorized access' });
-            }
-        } catch (error) {
-            return res.status(401).json({ success: false, message: 'Invalid token' });
-        }
-
         const { id } = req.params;
+        
+        // Tìm người dùng theo ID, loại bỏ trường password
         const user = await userModel.findById(id).select('-password -refreshToken');
         
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
         }
         
         res.json({ success: true, user });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Lỗi khi lấy thông tin người dùng:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Đã xảy ra lỗi khi lấy thông tin người dùng" 
+        });
     }
 };
 
 const updateUser = async (req, res) => {
     try {
-        // Kiểm tra token admin
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ success: false, message: 'Unauthorized access' });
-        }
-        
-        const token = authHeader.split(' ')[1];
-        try {
-            // Verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            // Kiểm tra xem token có phải của admin không
-            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
-                return res.status(401).json({ success: false, message: 'Unauthorized access' });
-            }
-        } catch (error) {
-            return res.status(401).json({ success: false, message: 'Invalid token' });
-        }
-
         const { id } = req.params;
         const { name, email } = req.body;
         
-        // Kiểm tra xem người dùng có tồn tại không
-        const user = await userModel.findById(id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+        // Kiểm tra dữ liệu đầu vào
+        if (!name || !email) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin cần thiết" 
+            });
+        }
+        
+        // Kiểm tra email hợp lệ
+        if (!validator.isEmail(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Email không hợp lệ" 
+            });
+        }
+        
+        // Kiểm tra email đã tồn tại chưa (nếu thay đổi email)
+        const existingUser = await userModel.findOne({ email, _id: { $ne: id } });
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Email đã được sử dụng" 
+            });
         }
         
         // Cập nhật thông tin người dùng
-        if (name) user.name = name;
-        if (email) {
-            // Kiểm tra xem email đã tồn tại chưa
-            const existingUser = await userModel.findOne({ email, _id: { $ne: id } });
-            if (existingUser) {
-                return res.status(400).json({ success: false, message: 'Email already exists' });
-            }
-            user.email = email;
+        const updatedUser = await userModel.findByIdAndUpdate(
+            id,
+            { name, email },
+            { new: true }
+        ).select('-password -refreshToken');
+        
+        if (!updatedUser) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
         }
         
-        // Lưu thay đổi
-        await user.save();
-        
-        res.json({ success: true, user: { _id: user._id, name: user.name, email: user.email } });
+        res.json({ 
+            success: true, 
+            message: "Cập nhật thông tin người dùng thành công", 
+            user: updatedUser 
+        });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Đã xảy ra lỗi khi cập nhật thông tin người dùng" 
+        });
     }
 };
 
 const deleteUser = async (req, res) => {
     try {
-        // Kiểm tra token admin
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ success: false, message: 'Unauthorized access' });
-        }
-        
-        const token = authHeader.split(' ')[1];
-        try {
-            // Verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            // Kiểm tra xem token có phải của admin không
-            if (decoded !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASS) {
-                return res.status(401).json({ success: false, message: 'Unauthorized access' });
-            }
-        } catch (error) {
-            return res.status(401).json({ success: false, message: 'Invalid token' });
-        }
-
         const { id } = req.params;
         
-        // Kiểm tra xem người dùng có tồn tại không
-        const user = await userModel.findById(id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+        // Xóa người dùng
+        const deletedUser = await userModel.findByIdAndDelete(id);
+        
+        if (!deletedUser) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
         }
         
-        // Xóa người dùng
-        await userModel.findByIdAndDelete(id);
-        
-        res.json({ success: true, message: 'User deleted successfully' });
+        res.json({ 
+            success: true, 
+            message: "Xóa người dùng thành công" 
+        });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error("Lỗi khi xóa người dùng:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Đã xảy ra lỗi khi xóa người dùng" 
+        });
     }
 };
 
@@ -624,5 +660,6 @@ export {
     getAllUsers,
     getUserById,
     updateUser,
-    deleteUser
+    deleteUser,
+    verifyAdminToken
 }

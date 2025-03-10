@@ -5,7 +5,12 @@ import axios from "axios"
 import { toast } from "react-toastify"
 import authService from '../services/authService'
 
-export const ShopContext = createContext()
+export const ShopContext = createContext(null)
+
+// Hàm tạo giỏ hàng mặc định trống
+const getDefaultCart = () => {
+    return {}
+}
 
 const ShopContextProvider = (props) => {
 
@@ -17,10 +22,15 @@ const ShopContextProvider = (props) => {
     const [token, setToken] = useState("")
     const [refreshToken, setRefreshToken] = useState("")
     const [user, setUser] = useState(null)
-    const [cartItems, setCartItems] = useState({})
+    const [cartItems, setCartItems] = useState(getDefaultCart())
     const [wishlistItems, setWishlistItems] = useState([])
     const [loading, setLoading] = useState(false)
     const [authError, setAuthError] = useState(null)
+    const [activePromotion, setActivePromotion] = useState(null)
+    const [discountAmount, setDiscountAmount] = useState(0)
+    const [promoCode, setPromoCode] = useState('')
+    const [promoError, setPromoError] = useState('')
+    const [promoLoading, setPromoLoading] = useState(false)
 
     // Initialize authentication state from storage
     useEffect(() => {
@@ -265,6 +275,78 @@ const ShopContextProvider = (props) => {
         return totalAmount
     }
     
+    // Tính tổng tiền sau khi áp dụng khuyến mãi
+    const getFinalAmount = () => {
+        const cartTotal = getCartAmount();
+        // Nếu không có khuyến mãi, trả về tổng ban đầu
+        if (!activePromotion || discountAmount <= 0) {
+            return cartTotal;
+        }
+        
+        // Trả về tổng sau khi trừ giảm giá
+        return Math.max(0, cartTotal - discountAmount);
+    }
+    
+    // Hàm kiểm tra mã khuyến mãi
+    const validatePromoCode = async (code) => {
+        if (!code) {
+            setPromoError('Vui lòng nhập mã khuyến mãi')
+            return false
+        }
+
+        const cartTotal = getCartAmount()
+        if (cartTotal === 0) {
+            setPromoError('Giỏ hàng của bạn đang trống')
+            return false
+        }
+
+        setPromoLoading(true)
+        setPromoError(null)
+
+        try {
+            const response = await axios.post('/api/promotions/validate', {
+                code,
+                cartTotal
+            })
+
+            if (response.data.valid) {
+                setActivePromotion(response.data.promotion)
+                setDiscountAmount(response.data.discountAmount)
+                setPromoError(null)
+                return true
+            } else {
+                setPromoError(response.data.message || 'Mã khuyến mãi không hợp lệ')
+                return false
+            }
+        } catch (error) {
+            setPromoError('Có lỗi xảy ra khi kiểm tra mã khuyến mãi')
+            return false
+        } finally {
+            setPromoLoading(false)
+        }
+    }
+    
+    // Hàm hủy áp dụng mã khuyến mãi
+    const clearPromotion = () => {
+        setActivePromotion(null)
+        setDiscountAmount(0)
+        setPromoCode('')
+        setPromoError('')
+    }
+    
+    // Áp dụng mã khuyến mãi khi thanh toán
+    const applyPromotion = async () => {
+        if (!activePromotion) return;
+        
+        try {
+            await axios.post(backendUrl + '/api/promotion/apply', {
+                code: activePromotion.code
+            })
+        } catch (error) {
+            console.error('Lỗi khi áp dụng mã khuyến mãi:', error)
+        }
+    }
+
     // Updating the Quantity
     const updateQuantity = async (itemId, quantity) => {
         const cartData = { ...cartItems }
@@ -528,6 +610,7 @@ const ShopContextProvider = (props) => {
         addToCart, 
         getCartCount, 
         getCartAmount, 
+        getFinalAmount,
         updateQuantity, 
         delivery_charges, 
         backendUrl,
@@ -540,7 +623,16 @@ const ShopContextProvider = (props) => {
         addToWishlist,
         removeFromWishlist,
         getWishlist,
-        isInWishlist
+        isInWishlist,
+        activePromotion,
+        discountAmount,
+        promoCode,
+        setPromoCode,
+        promoError,
+        promoLoading,
+        validatePromoCode,
+        clearPromotion,
+        applyPromotion
     }
 
     return (
