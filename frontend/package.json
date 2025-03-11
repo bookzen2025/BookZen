@@ -9,8 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  
   "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
+    "@react-oauth/google": "^0.12.1",
     "axios": "^1.7.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -19,10 +20,8 @@
     "react-router-dom": "^7.0.2",
     "react-toastify": "^10.0.6",
     "swiper": "^11.1.15",
-    "yup": "^1.4.0",
-    "@hookform/resolvers": "^3.3.4"
+    "yup": "^1.4.0"
   },
-
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "@types/react": "^18.3.12",
@@ -34,9 +33,9 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "nodemailer": "^6.9.9",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
-    "vite": "^6.0.1",
-    "nodemailer": "^6.9.9"
+    "vite": "^6.0.1"
   }
 }

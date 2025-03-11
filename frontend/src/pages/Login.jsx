@@ -7,6 +7,7 @@ import loginImg from "../assets/login.png";
 import { useContext } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+import { FcGoogle } from "react-icons/fc";
 
 // Schema for login form
 const loginSchema = yup.object().shape({
@@ -69,6 +70,11 @@ const Login = () => {
     }
   };
 
+  // Xử lý đăng nhập bằng Google
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/user/auth/google`;
+  };
+
   // Reset form when switching between login and signup
   useEffect(() => {
     reset();
@@ -80,6 +86,18 @@ const Login = () => {
       navigate('/');
     }
   }, [token, navigate]);
+
+  // Kiểm tra lỗi đăng nhập từ URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    
+    if (error === 'auth_failed') {
+      // Xóa tham số error khỏi URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, []);
 
   // Password strength meter component
   const PasswordStrengthMeter = ({ password }) => {
@@ -248,35 +266,62 @@ const Login = () => {
             )}
             
             <button 
-              type='submit' 
-              className='btn-dark w-full mt-5 !py-[7px] !rounded flex justify-center'
+              type="submit" 
+              className='w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed'
               disabled={loading}
             >
-              {loading ? (
-                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                currState === "Sign Up" ? 'Sign Up' : 'Login'
-              )}
+              {loading ? 'Đang xử lý...' : currState === "Login" ? 'Đăng nhập' : 'Đăng ký'}
             </button>
             
-            <div className='w-full flex flex-col gap-y-3 medium-14'>
-              <div 
-                onClick={() => navigate('/forgot-password')} 
-                className='underline cursor-pointer hover:text-secondaryOne'
-              >
-                Quên mật khẩu?
+            {/* Nút đăng nhập bằng Google */}
+            <div className="w-full">
+              <div className="flex items-center my-4">
+                <div className="flex-grow border-t border-gray-300"></div>
+                <span className="px-3 text-gray-500 text-sm">Hoặc</span>
+                <div className="flex-grow border-t border-gray-300"></div>
               </div>
-              {currState === 'Login' ? (
-                <div className='underline'>Don't have an account? <span onClick={() => setCurrState('Sign Up')} className='cursor-pointer hover:text-secondaryOne'>Create account</span></div>
-              ) : (
-                <div className='underline'>Already have an account? <span onClick={() => setCurrState('Login')} className='cursor-pointer hover:text-secondaryOne'>Login</span></div>
+              
+              <button 
+                type="button" 
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded hover:bg-gray-50 transition-all duration-300"
+              >
+                <FcGoogle className="text-xl" />
+                <span>Đăng nhập bằng Google</span>
+              </button>
+            </div>
+            
+            {/* Toggle between Login and Sign Up */}
+            <div className='w-full text-center mt-4'>
+              <p className='text-sm'>
+                {currState === "Login" ? "Chưa có tài khoản? " : "Đã có tài khoản? "}
+                <button 
+                  type="button"
+                  onClick={() => setCurrState(currState === "Login" ? "Sign Up" : "Login")}
+                  className='text-blue-600 hover:underline'
+                >
+                  {currState === "Login" ? "Đăng ký" : "Đăng nhập"}
+                </button>
+              </p>
+              
+              {/* Forgot Password link */}
+              {currState === "Login" && (
+                <p className='text-sm mt-2'>
+                  <button 
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className='text-blue-600 hover:underline'
+                  >
+                    Quên mật khẩu?
+                  </button>
+                </p>
               )}
             </div>
           </form>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

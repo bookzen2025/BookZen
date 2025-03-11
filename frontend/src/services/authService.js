@@ -64,6 +64,16 @@ const authService = {
         }
     },
     
+    // Lấy thông tin người dùng Google
+    getGoogleUser: async (userId) => {
+        try {
+            const response = await axios.get(`${API_URL}/api/user/auth/google/user/${userId}`);
+            return response.data;
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
+    
     // Refresh access token
     refreshToken: async (refreshToken) => {
         try {

@@ -646,6 +646,55 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// Hàm xử lý kết quả đăng nhập Google
+export const handleGoogleCallback = (req, res) => {
+  try {
+    // Lấy thông tin người dùng từ req.user (được thiết lập bởi Passport)
+    const { user, token, refreshToken } = req.user;
+
+    // Chuyển hướng về frontend với token và refreshToken
+    res.redirect(`${process.env.FRONTEND_URL}/auth/google/callback?token=${token}&refreshToken=${refreshToken}&userId=${user.id}`);
+  } catch (error) {
+    console.error('Google callback error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+  }
+};
+
+// Hàm xử lý lấy thông tin người dùng sau khi đăng nhập Google
+export const handleGoogleUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Tìm người dùng trong cơ sở dữ liệu
+    const user = await userModel.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+    }
+    
+    // Trả về thông tin người dùng (không bao gồm mật khẩu)
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+        isGoogleUser: user.isGoogleUser
+      }
+    });
+  } catch (error) {
+    console.error('Get Google user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server'
+    });
+  }
+};
+
 export { 
     handleUserLogin, 
     handleUserRegister, 

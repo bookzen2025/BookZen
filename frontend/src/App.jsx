@@ -15,6 +15,7 @@ import BookDetail from './pages/BookDetail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Wishlist from './pages/Wishlist'
+import GoogleCallback from './pages/GoogleCallback'
 
 const App = () => {
   return (
@@ -45,6 +46,7 @@ const App = () => {
         <Route path='/forgot-password' element={<ForgotPassword />} />
         <Route path='/reset-password' element={<ResetPassword />} />
         <Route path='/wishlist' element={<Wishlist />} />
+        <Route path='/auth/google/callback' element={<GoogleCallback />} />
       </Routes>
     </main>
   )

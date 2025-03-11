@@ -4,7 +4,10 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
     name:{type:String, required:true},
     email:{type:String, required:true, unique:true},
-    password:{type:String, required:true},
+    password:{type:String, required:false},
+    googleId:{type:String, sparse:true, unique:true},
+    profilePicture:{type:String},
+    isGoogleUser:{type:Boolean, default:false},
     cartData:{type:Object, default:{}},
     wishlist:{type:Array, default:[]},
     resetPasswordToken:{type:String},

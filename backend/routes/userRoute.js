@@ -15,12 +15,15 @@ import {
     getUserById,
     updateUser,
     deleteUser,
-    verifyAdminToken
+    verifyAdminToken,
+    handleGoogleCallback,
+    handleGoogleUser
 } from "../controllers/userController.js"
 import { loginRateLimiter, passwordResetRateLimiter } from "../middleware/rateLimiter.js"
 import { csrfProtection } from "../middleware/csrf.js"
 import authUser from "../middleware/auth.js"
 import adminAuth from "../middleware/adminAuth.js"
+import passport from "../config/passport.js"
 
 const userRouter = express.Router()
 
@@ -35,6 +38,11 @@ userRouter.post('/forgot-password', passwordResetRateLimiter, csrfProtection, ha
 userRouter.post('/reset-password', csrfProtection, handleResetPassword)
 userRouter.post('/refresh-token', csrfProtection, handleTokenRefresh)
 userRouter.post('/logout', authUser, csrfProtection, handleLogout)
+
+// Google OAuth routes
+userRouter.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+userRouter.get('/auth/google/callback', passport.authenticate('google', { session: false }), handleGoogleCallback)
+userRouter.get('/auth/google/user/:userId', handleGoogleUser)
 
 // Xác thực token admin
 userRouter.get('/verify-admin', verifyAdminToken)

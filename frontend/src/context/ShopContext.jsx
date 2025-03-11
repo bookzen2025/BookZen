@@ -31,6 +31,7 @@ const ShopContextProvider = (props) => {
     const [promoCode, setPromoCode] = useState('')
     const [promoError, setPromoError] = useState('')
     const [promoLoading, setPromoLoading] = useState(false)
+    const [wishlistLoaded, setWishlistLoaded] = useState(false)
 
     // Initialize authentication state from storage
     useEffect(() => {
@@ -588,10 +589,64 @@ const ShopContextProvider = (props) => {
 
     // Load wishlist when user is authenticated
     useEffect(() => {
-        if (user && token) {
-            getWishlist()
+        if (user && token && !wishlistLoaded) {
+            getWishlist();
+            setWishlistLoaded(true);
         }
-    }, [user, token])
+    }, [user, token, wishlistLoaded]);
+
+    // Reset wishlistLoaded when user logs out
+    useEffect(() => {
+        if (!user || !token) {
+            setWishlistLoaded(false);
+        }
+    }, [user, token]);
+
+    // Xử lý đăng nhập Google callback
+    const handleGoogleCallback = async (params) => {
+        setLoading(true)
+        setAuthError(null)
+        
+        try {
+            const { token, refreshToken, userId } = params
+            
+            if (token && refreshToken && userId) {
+                // Lấy thông tin người dùng từ API
+                const response = await authService.getGoogleUser(userId)
+                
+                if (response.success) {
+                    setToken(token)
+                    setRefreshToken(refreshToken)
+                    setUser(response.user)
+                    
+                    localStorage.setItem('token', token)
+                    localStorage.setItem('refreshToken', refreshToken)
+                    localStorage.setItem('user', JSON.stringify(response.user))
+                    
+                    // Lấy giỏ hàng của người dùng
+                    await getUserCart(token)
+                    
+                    return { success: true }
+                } else {
+                    setAuthError(response.message)
+                    toast.error(response.message)
+                    return { success: false, message: response.message }
+                }
+            } else {
+                const errorMsg = 'Đăng nhập Google thất bại'
+                setAuthError(errorMsg)
+                toast.error(errorMsg)
+                return { success: false, message: errorMsg }
+            }
+        } catch (error) {
+            const errorMsg = error.message || 'Đăng nhập Google thất bại'
+            setAuthError(errorMsg)
+            toast.error(errorMsg)
+            return { success: false, message: errorMsg }
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const contextValue = { 
         books, 
@@ -632,7 +687,8 @@ const ShopContextProvider = (props) => {
         promoLoading,
         validatePromoCode,
         clearPromotion,
-        applyPromotion
+        applyPromotion,
+        handleGoogleCallback
     }
 
     return (

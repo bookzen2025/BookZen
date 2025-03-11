@@ -20,71 +20,28 @@ const Login = ({setToken}) => {
     setLoading(true)
     
     try {
-      console.log('===== CLIENT DEBUGGING =====');
-      console.log(`Attempting login with email: ${email}`);
-      console.log(`API URL: ${backend_url}/api/user/admin`);
-      
-      // Log request config trước khi gửi
-      const requestConfig = {
-        method: 'POST',
-        url: `${backend_url}/api/user/admin`,
-        data: { email, password: '***HIDDEN***' },
-        headers: { 'Content-Type': 'application/json' }
-      };
-      console.log('Request config:', requestConfig);
-      
-      const startTime = new Date().getTime();
-      
       const response = await axios.post(`${backend_url}/api/user/admin`, {
         email, 
         password
       });
       
-      const endTime = new Date().getTime();
-      console.log(`Request took ${endTime - startTime}ms to complete`);
-      
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      console.log('Response data:', { ...response.data, token: response.data.token ? 'TOKEN_EXISTS' : 'NO_TOKEN' });
-      
       if (response.data.success) {
         toast.success("Đăng nhập thành công!")
-        console.log('Setting token in app state and redirecting...');
         setToken(response.data.token)
       } else {
-        console.error('Server returned success: false');
         toast.error(response.data.message || "Đăng nhập thất bại")
       }
     } catch (error) {
-      console.error("===== CLIENT ERROR DETAILS =====");
-      console.error("Lỗi đăng nhập:", error);
-      
-      // Hiển thị thông báo lỗi chi tiết
       if (error.response) {
         // Server trả về response với status code không phải 2xx
-        console.error('Error response:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers
-        });
         toast.error(error.response.data?.message || `Lỗi: ${error.response.status} - ${error.response.statusText}`)
       } else if (error.request) {
         // Request đã được gửi nhưng không nhận được response
-        console.error('No response received:', error.request);
         toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn.")
       } else {
         // Lỗi trong quá trình thiết lập request
-        console.error('Request setup error:', error.message);
         toast.error(`Lỗi: ${error.message}`)
       }
-      
-      // Log thêm thông tin về cấu hình axios
-      console.error('Axios defaults:', {
-        baseURL: axios.defaults.baseURL,
-        timeout: axios.defaults.timeout,
-        headers: axios.defaults.headers
-      });
     } finally {
       setLoading(false)
     }
