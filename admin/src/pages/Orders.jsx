@@ -19,6 +19,10 @@ const Orders = ({ token }) => {
       console.log(response.data)
       if (response.data.success) {
         setOrders(response.data.orders.reverse())
+        if (response.data.orders.length > 0) {
+          console.log('Chi tiết đơn hàng đầu tiên:', response.data.orders[0])
+          console.log('Địa chỉ đơn hàng:', response.data.orders[0].address)
+        }
       } else {
         toast.error(response.data.message)
       }
@@ -69,12 +73,13 @@ const Orders = ({ token }) => {
                   })}
                 </div>
               </div>
-              <p><span className='text-tertiary medium-14'>Name:</span>{order.address.firstName + " " + order.address.lastName}</p>
+              <p><span className='text-tertiary medium-14'>Name:</span>{order.address.fullName}</p>
               <p><span className='text-tertiary medium-14'>Address: </span>
-                <span>{order.address.street + ", "}</span>
-                <span>{order.address.city + ", " + order.address.state + ", " + order.address.country + ", " + order.address.zipcode}</span>
+                <span>{order.address.address + ", "}</span>
+                <span>{order.address.district + ", " + order.address.province}</span>
               </p>
-              <p>{order.address.phone}</p>
+              <p><span className='text-tertiary medium-14'>Email: </span>{order.address.email}</p>
+              <p><span className='text-tertiary medium-14'>Phone: </span>{order.address.phone}</p>
             </div>
             <div>
               <p><span className='text-tertiary medium-14'>Total: </span>{order.items.length}</p>

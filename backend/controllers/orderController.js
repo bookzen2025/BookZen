@@ -1,14 +1,67 @@
 import orderModel from "../models/orderModel.js"
 import userModel from "../models/userModel.js"
+import productModel from "../models/productModel.js"
 
 // Global variables for payment
 const currency = 'usd'
 const deliveryCharges = 120000
 
+// Hàm để cập nhật tồn kho khi đặt hàng
+const updateStockForOrder = async (items, increase = false) => {
+    try {
+        for (const item of items) {
+            const productId = item._id || item.id;
+            const quantity = item.quantity || 1;
+            
+            // Tìm sản phẩm
+            const product = await productModel.findById(productId);
+            if (!product) continue;
+            
+            // Cập nhật tồn kho: giảm nếu đặt hàng, tăng nếu hủy đơn hàng
+            const newStock = increase 
+                ? (product.stock || 0) + quantity 
+                : Math.max(0, (product.stock || 0) - quantity);
+            
+            await productModel.findByIdAndUpdate(productId, { stock: newStock });
+        }
+    } catch (error) {
+        console.error("Lỗi khi cập nhật tồn kho:", error);
+        // Không ném lỗi, chỉ ghi nhật ký
+    }
+};
+
 // Place order using Cash on Delivery
 const placeOrder = async (req, res) => {
     try {
         const { userId, items, amount, address, promoCode } = req.body
+
+        // Kiểm tra tồn kho trước khi đặt hàng
+        let insufficientStock = [];
+        for (const item of items) {
+            const productId = item._id || item.id;
+            const quantity = item.quantity || 1;
+            
+            const product = await productModel.findById(productId);
+            if (!product) continue;
+            
+            // Nếu sản phẩm không đủ tồn kho
+            if ((product.stock || 0) < quantity) {
+                insufficientStock.push({
+                    name: product.name,
+                    available: product.stock || 0,
+                    requested: quantity
+                });
+            }
+        }
+        
+        // Nếu có sản phẩm không đủ tồn kho
+        if (insufficientStock.length > 0) {
+            return res.json({ 
+                success: false, 
+                message: "Một số sản phẩm không đủ tồn kho", 
+                insufficientStock 
+            });
+        }
 
         const orderData = {
             userId,
@@ -22,6 +75,9 @@ const placeOrder = async (req, res) => {
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()
+
+        // Cập nhật tồn kho - giảm số lượng
+        await updateStockForOrder(items);
 
         await userModel.findByIdAndUpdate(userId, { cartData: {} })
 
@@ -38,6 +94,34 @@ const placeBankTransfer = async (req, res) => {
     try {
         const { userId, items, amount, address, promoCode } = req.body
 
+        // Kiểm tra tồn kho trước khi đặt hàng
+        let insufficientStock = [];
+        for (const item of items) {
+            const productId = item._id || item.id;
+            const quantity = item.quantity || 1;
+            
+            const product = await productModel.findById(productId);
+            if (!product) continue;
+            
+            // Nếu sản phẩm không đủ tồn kho
+            if ((product.stock || 0) < quantity) {
+                insufficientStock.push({
+                    name: product.name,
+                    available: product.stock || 0,
+                    requested: quantity
+                });
+            }
+        }
+        
+        // Nếu có sản phẩm không đủ tồn kho
+        if (insufficientStock.length > 0) {
+            return res.json({ 
+                success: false, 
+                message: "Một số sản phẩm không đủ tồn kho", 
+                insufficientStock 
+            });
+        }
+
         const orderData = {
             userId,
             items,
@@ -50,6 +134,9 @@ const placeBankTransfer = async (req, res) => {
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()
+
+        // Cập nhật tồn kho - giảm số lượng
+        await updateStockForOrder(items);
 
         // Return the order data without clearing cart (cart will be cleared after payment confirmation)
         res.json({ 
@@ -110,8 +197,19 @@ const UpdateStatus = async (req, res) => {
     try {
         const { orderId, status } = req.body
         
-        // Tìm đơn hàng để kiểm tra phương thức thanh toán
+        // Tìm đơn hàng để kiểm tra phương thức thanh toán và trạng thái hiện tại
         const order = await orderModel.findById(orderId)
+        const oldStatus = order.status;
+        
+        // Nếu đơn hàng bị hủy, trả lại tồn kho
+        if (status === "Cancelled" && oldStatus !== "Cancelled") {
+            await updateStockForOrder(order.items, true); // tăng lại tồn kho
+        }
+        
+        // Nếu đơn hàng trước đó đã hủy, nhưng giờ được kích hoạt lại
+        if (oldStatus === "Cancelled" && status !== "Cancelled") {
+            await updateStockForOrder(order.items); // giảm lại tồn kho
+        }
         
         if (status === "Delivered" && order.paymentMethod === "COD") {
             // Nếu là đơn hàng COD và trạng thái mới là "Delivered", tự động cập nhật payment thành true
@@ -189,4 +287,57 @@ const checkUserPurchased = async (req, res) => {
     }
 };
 
-export { placeOrder, placeBankTransfer, allOrders, userOrders, markBankTransferComplete, UpdateStatus, checkUserPurchased }
+// Hủy đơn hàng từ phía người dùng
+const cancelOrder = async (req, res) => {
+    try {
+        const { orderId, userId } = req.body;
+        
+        // Tìm đơn hàng
+        const order = await orderModel.findById(orderId);
+        
+        if (!order) {
+            return res.json({
+                success: false,
+                message: "Không tìm thấy đơn hàng"
+            });
+        }
+        
+        // Đảm bảo người dùng chỉ hủy được đơn hàng của chính họ
+        if (String(order.userId) !== String(userId)) {
+            return res.json({
+                success: false,
+                message: "Bạn không có quyền hủy đơn hàng này"
+            });
+        }
+        
+        // Chỉ cho phép hủy đơn hàng chưa giao
+        const nonCancelableStatuses = ["Delivered", "Đã giao hàng"];
+        if (nonCancelableStatuses.includes(order.status)) {
+            return res.json({
+                success: false,
+                message: "Không thể hủy đơn hàng đã giao"
+            });
+        }
+        
+        // Nếu đơn hàng chưa bị hủy trước đó, cập nhật tồn kho
+        if (order.status !== "Cancelled") {
+            await updateStockForOrder(order.items, true); // Tăng lại tồn kho
+        }
+        
+        // Cập nhật trạng thái đơn hàng
+        await orderModel.findByIdAndUpdate(orderId, { status: "Cancelled" });
+        
+        res.json({
+            success: true,
+            message: "Đơn hàng đã được hủy thành công"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Đã xảy ra lỗi khi hủy đơn hàng"
+        });
+    }
+};
+
+export { placeOrder, placeBankTransfer, allOrders, userOrders, markBankTransferComplete, UpdateStatus, checkUserPurchased, cancelOrder }

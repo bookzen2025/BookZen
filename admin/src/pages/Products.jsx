@@ -23,6 +23,7 @@ const Products = ({ token }) => {
   const [publisher, setPublisher] = useState('')
   const [publishedYear, setPublishedYear] = useState('')
   const [pages, setPages] = useState('')
+  const [stock, setStock] = useState(0)
   
   // State cho danh sách sản phẩm
   const [products, setProducts] = useState([])
@@ -84,6 +85,7 @@ const Products = ({ token }) => {
     setPublisher('')
     setPublishedYear('')
     setPages('')
+    setStock(0)
     setEditMode(false)
     setCurrentProductId('')
   }
@@ -106,6 +108,7 @@ const Products = ({ token }) => {
       formData.append("category", category)
       formData.append("popular", popular)
       formData.append("newArrivals", newArrivals)
+      formData.append("stock", stock)
       
       // Chỉ thêm hình ảnh nếu có chọn hình ảnh mới
       if (image) {
@@ -156,6 +159,7 @@ const Products = ({ token }) => {
     setPublisher(product.publisher || '')
     setPublishedYear(product.publishedYear || '')
     setPages(product.pages || '')
+    setStock(product.stock || 0)
     
     // Cuộn lên đầu trang để nhìn thấy form
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -172,6 +176,27 @@ const Products = ({ token }) => {
           resetForm()
         }
         await fetchProducts()
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    }
+  }
+
+  // Hàm cập nhật nhanh tồn kho
+  const handleUpdateStock = async (id, newStock) => {
+    try {
+      const response = await axios.post(
+        `${backend_url}/api/product/update-stock`, 
+        { id, stock: newStock }, 
+        { headers: { Authorization: token } }
+      )
+      
+      if (response.data.success) {
+        toast.success("Cập nhật tồn kho thành công")
+        await fetchProducts() // Cập nhật lại danh sách sản phẩm
       } else {
         toast.error(response.data.message)
       }
@@ -253,6 +278,18 @@ const Products = ({ token }) => {
             <h5 className='h5'>Pages</h5>
             <input onChange={(e) => setPages(e.target.value)} value={pages} type="number" placeholder='Pages' min={1} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-20' />
           </div>
+
+          <div>
+            <h5 className='h5'>Tồn kho</h5>
+            <input 
+              onChange={(e) => setStock(e.target.value)} 
+              value={stock} 
+              type="number" 
+              placeholder='Số lượng tồn kho' 
+              min={0} 
+              className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-32'
+            />
+          </div>
         </div>
         
         <div className='w-full'>
@@ -286,11 +323,12 @@ const Products = ({ token }) => {
       {/* Danh sách sản phẩm */}
       <h2 className='text-xl font-bold mb-4'>Danh sách sản phẩm</h2>
       <div className='flex flex-col gap-2'>
-        <div className='grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr] items-center py-1 px-2 bg-white bold-14 sm:bold-15 mb-1 rounded'>
+        <div className='grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr] items-center py-1 px-2 bg-white bold-14 sm:bold-15 mb-1 rounded'>
           <h5>Hình ảnh</h5>
           <h5>Tên sách</h5>
           <h5>Danh mục</h5>
           <h5>Giá</h5>
+          <h5>Tồn kho</h5>
           <h5>Sửa</h5>
           <h5>Xóa</h5>
         </div>
@@ -300,11 +338,25 @@ const Products = ({ token }) => {
           <div className='p-4 bg-white rounded text-center'>Chưa có sản phẩm nào</div>
         ) : (
           products.map((item) => (
-            <div key={item._id} className='grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr] items-center gap-2 p-1 bg-white rounded-xl'>
+            <div key={item._id} className='grid grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr_1fr_1fr] items-center gap-2 p-1 bg-white rounded-xl'>
               <img src={item.image} alt="" className='w-12 rounded-lg'/>
               <h5 className='text-sm font-semibold'>{item.name}</h5>
               <p className='font-semibold'>{item.category}</p>
               <div className='text-sm font-semibold'>{currency}{item.price}</div>
+              <div className='flex items-center'>
+                <input 
+                  type="number" 
+                  className='w-16 px-2 py-1 text-sm border rounded mr-2'
+                  min={0}
+                  defaultValue={item.stock || 0}
+                  onBlur={(e) => {
+                    const newValue = parseInt(e.target.value);
+                    if (newValue !== item.stock) {
+                      handleUpdateStock(item._id, newValue);
+                    }
+                  }}
+                />
+              </div>
               <div><FaEdit onClick={() => handleEdit(item)} className='text-right md:text-center cursor-pointer text-lg text-blue-500'/></div>
               <div><TbTrash onClick={() => removeProduct(item._id)} className='text-right md:text-center cursor-pointer text-lg text-red-500'/></div>
             </div>

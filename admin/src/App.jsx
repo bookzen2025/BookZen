@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Categories from './pages/Categories'
 import Users from './pages/Users'
 import Promotions from './pages/Promotions'
+import Inventory from './pages/Inventory'
 import { ToastContainer, Bounce } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Login from './components/Login'
@@ -101,6 +102,7 @@ const App = () => {
             <Routes>
               <Route path='/' element={<Dashboard token={token}/>} />
               <Route path='/products' element={<Products token={token}/>} />
+              <Route path='/inventory' element={<Inventory token={token}/>} />
               <Route path='/orders' element={<Orders token={token}/>} />
               <Route path='/categories' element={<Categories token={token}/>} />
               <Route path='/users' element={<Users token={token}/>} />

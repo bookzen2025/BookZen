@@ -18,12 +18,13 @@ const createProduct = async (req, res) => {
             author = "",
             publisher = "",
             publishedYear = "",
-            pages = ""
+            pages = "",
+            stock = 0
         } = req.body;
 
         console.log("Extracted fields:", {
             name, description, category, price, popular, newArrivals,
-            author, publisher, publishedYear, pages
+            author, publisher, publishedYear, pages, stock
         });
 
         let imageUrl = "https://via.placeholder.com/150"; // Default image URL
@@ -55,6 +56,7 @@ const createProduct = async (req, res) => {
             publisher: String(publisher || ""),
             publishedYear: publishedYear ? Number(publishedYear) : null,
             pages: pages ? Number(pages) : null,
+            stock: Number(stock) || 0,
             image: imageUrl,
             date: Date.now()
         };
@@ -211,7 +213,8 @@ const updateProduct = async (req, res) => {
             author = "",
             publisher = "",
             publishedYear = "",
-            pages = ""
+            pages = "",
+            stock = 0
         } = req.body;
 
         let updateData = {
@@ -225,6 +228,7 @@ const updateProduct = async (req, res) => {
             publisher: String(publisher || ""),
             publishedYear: publishedYear ? Number(publishedYear) : null,
             pages: pages ? Number(pages) : null,
+            stock: Number(stock) || 0
         };
 
         // Chỉ cập nhật hình ảnh nếu có file mới được tải lên
@@ -262,4 +266,58 @@ const updateProduct = async (req, res) => {
     }
 };
 
-export { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview, updateProduct };
+// Thêm API để cập nhật tồn kho
+const updateStock = async (req, res) => {
+    try {
+        const { id, stock } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ success: false, message: "ID sản phẩm không được cung cấp" });
+        }
+
+        if (stock === undefined || stock === null) {
+            return res.status(400).json({ success: false, message: "Số lượng tồn kho không được cung cấp" });
+        }
+
+        const updatedProduct = await productModel.findByIdAndUpdate(
+            id,
+            { stock: Number(stock) },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProduct) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm" });
+        }
+
+        res.json({ 
+            success: true, 
+            message: "Số lượng tồn kho đã được cập nhật thành công",
+            product: updatedProduct
+        });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật tồn kho:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi cập nhật tồn kho" 
+        });
+    }
+};
+
+// Lấy thông tin tồn kho của tất cả sản phẩm
+const getInventory = async (req, res) => {
+    try {
+        const products = await productModel.find({}, 'name image category stock price');
+        res.json({ 
+            success: true, 
+            inventory: products 
+        });
+    } catch (error) {
+        console.error("Lỗi khi lấy thông tin tồn kho:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Đã xảy ra lỗi khi lấy thông tin tồn kho" 
+        });
+    }
+};
+
+export { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview, updateProduct, updateStock, getInventory };

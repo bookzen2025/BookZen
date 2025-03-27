@@ -5,6 +5,7 @@ import { MdFactCheck, MdDashboard } from "react-icons/md"
 import { BiLogOut } from "react-icons/bi"
 import { MdProductionQuantityLimits } from "react-icons/md"
 import { MdLocalOffer } from "react-icons/md"
+import { BsBoxSeam } from "react-icons/bs"
 import logo from "../assets/logo.png"
 import { Link, NavLink } from 'react-router-dom'
 
@@ -33,6 +34,10 @@ const Sidebar = ({setToken}) => {
                     <NavLink to={'/products'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <MdProductionQuantityLimits />
                         <div className='hidden lg:flex'>Sản phẩm</div>
+                    </NavLink>
+                    <NavLink to={'/inventory'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
+                        <BsBoxSeam />
+                        <div className='hidden lg:flex'>Tồn kho</div>
                     </NavLink>
                     <NavLink to={'/categories'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <FaTags />

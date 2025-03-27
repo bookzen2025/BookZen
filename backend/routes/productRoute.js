@@ -1,5 +1,5 @@
 import express from "express";
-import { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview, updateProduct } from "../controllers/productController.js";
+import { createProduct, deleteProduct, getAllProducts, getProductById, addProductReview, updateProduct, updateStock, getInventory } from "../controllers/productController.js";
 import upload from "../middleware/multer.js";
 import adminAuth from "../middleware/adminAuth.js";
 
@@ -12,5 +12,9 @@ productRouter.post('/delete', adminAuth, deleteProduct);
 productRouter.post('/single', getProductById);
 productRouter.get('/list', getAllProducts);
 productRouter.post('/review', addProductReview);
+
+// Thêm API cho quản lý tồn kho
+productRouter.post('/update-stock', adminAuth, updateStock);
+productRouter.get('/inventory', adminAuth, getInventory);
 
 export default productRouter;

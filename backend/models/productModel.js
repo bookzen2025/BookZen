@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema({
     date: {type:Number, required:true},
     popular: {type:Boolean},
     newArrivals: {type:Boolean},
+    stock: {type:Number, default: 0},
     reviews: [reviewSchema]
 });
 
