@@ -35,14 +35,13 @@ const Inventory = ({ token }) => {
     
     try {
       setLoading(true);
-      const response = await axios.post(
-        `${backend_url}/api/product/list`,
-        {},
+      const response = await axios.get(
+        `${backend_url}/api/product/inventory`,
         { headers: { Authorization: token } }
       );
       
       if (response.data.success) {
-        const productsData = response.data.products;
+        const productsData = response.data.inventory;
         setProducts(productsData);
         setFilteredProducts(productsData);
         
@@ -71,7 +70,7 @@ const Inventory = ({ token }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.post(`${backend_url}/api/category/list`);
+      const response = await axios.get(`${backend_url}/api/category/list`);
       if (response.data.success) {
         setCategories(response.data.categories);
       }
@@ -141,7 +140,7 @@ const Inventory = ({ token }) => {
       const response = await axios.post(
         `${backend_url}/api/product/update-stock`,
         { 
-          productId: editingProduct._id, 
+          id: editingProduct._id, 
           stock: newStock 
         },
         { headers: { Authorization: token } }

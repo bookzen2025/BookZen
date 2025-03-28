@@ -52,9 +52,8 @@ const Promotions = ({ token }) => {
     
     try {
       setLoading(true)
-      const response = await axios.post(
+      const response = await axios.get(
         `${backend_url}/api/promotion/list`, 
-        {}, 
         { headers: { Authorization: token } }
       )
       
@@ -99,7 +98,7 @@ const Promotions = ({ token }) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.post(`${backend_url}/api/product/list`)
+      const response = await axios.get(`${backend_url}/api/product/list`)
       if (response.data.success) {
         setProducts(response.data.products)
       }
@@ -174,11 +173,10 @@ const Promotions = ({ token }) => {
     
     try {
       setLoading(true)
-      const response = await axios.post(
-        `${backend_url}/api/promotion/delete`, 
-        { promotionId: promotionIdToDelete }, 
-          { headers: { Authorization: token } }
-        )
+      const response = await axios.delete(
+        `${backend_url}/api/promotion/delete/${promotionIdToDelete}`, 
+        { headers: { Authorization: token } }
+      )
 
       if (response.data.success) {
         toast.success('Xóa khuyến mãi thành công')
@@ -208,35 +206,34 @@ const Promotions = ({ token }) => {
     try {
       setLoading(true)
       
-      const endpoint = isEditing 
-        ? `${backend_url}/api/promotion/update` 
-        : `${backend_url}/api/promotion/create`
-      
-      const payload = {
-        ...formData
-      }
+      const payload = { ...formData }
+      let response
       
       if (isEditing) {
-        payload.promotionId = currentPromotion._id
+        response = await axios.put(
+          `${backend_url}/api/promotion/update/${currentPromotion._id}`, 
+          payload,
+          { headers: { Authorization: token } }
+        )
+      } else {
+        response = await axios.post(
+          `${backend_url}/api/promotion/create`,
+          payload,
+          { headers: { Authorization: token } }
+        )
       }
-      
-      const response = await axios.post(
-        endpoint, 
-        payload, 
-        { headers: { Authorization: token } }
-      )
 
-        if (response.data.success) {
+      if (response.data.success) {
         toast.success(isEditing ? 'Cập nhật khuyến mãi thành công' : 'Tạo khuyến mãi thành công')
         setIsCreating(false)
         setIsEditing(false)
         setCurrentPromotion(null)
         await fetchPromotions()
-        } else {
-          toast.error(response.data.message)
-        }
-      } catch (error) {
-        console.log(error)
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log(error)
       toast.error(error.message)
     } finally {
       setLoading(false)

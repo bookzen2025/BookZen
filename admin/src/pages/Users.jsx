@@ -35,9 +35,8 @@ const Users = ({ token }) => {
     
     try {
       setLoading(true)
-      const response = await axios.post(
-        `${backend_url}/api/user/all-users`, 
-        {}, 
+      const response = await axios.get(
+        `${backend_url}/api/user/admin/users`, 
         { headers: { Authorization: token } }
       )
       
@@ -95,12 +94,9 @@ const Users = ({ token }) => {
     
     try {
       setLoading(true)
-      const response = await axios.post(
-        `${backend_url}/api/user/update-user`, 
-        {
-          userId: currentUser._id,
-          ...formData
-        },
+      const response = await axios.put(
+        `${backend_url}/api/user/admin/users/${currentUser._id}`, 
+        formData,
         { headers: { Authorization: token } }
       )
       
@@ -130,9 +126,8 @@ const Users = ({ token }) => {
     
     try {
       setLoading(true)
-      const response = await axios.post(
-        `${backend_url}/api/user/delete-user`, 
-        { userId: userIdToDelete }, 
+      const response = await axios.delete(
+        `${backend_url}/api/user/admin/users/${userIdToDelete}`, 
         { headers: { Authorization: token } }
       )
       
@@ -155,9 +150,9 @@ const Users = ({ token }) => {
   const toggleActive = async (userId, currentStatus) => {
     try {
       setLoading(true)
-      const response = await axios.post(
-        `${backend_url}/api/user/toggle-active`, 
-        { userId, active: !currentStatus }, 
+      const response = await axios.put(
+        `${backend_url}/api/user/admin/users/${userId}`, 
+        { active: !currentStatus },
         { headers: { Authorization: token } }
       )
       

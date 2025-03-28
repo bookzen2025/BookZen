@@ -17,16 +17,13 @@ const Categories = ({ token }) => {
   const [filteredCategories, setFilteredCategories] = useState([])
 
   const fetchCategories = async () => {
-    if (!token) return null
-    
     try {
       setLoading(true)
-      const response = await axios.post(`${backend_url}/api/category/list`)
+      const response = await axios.get(`${backend_url}/api/category/list`)
       
       if (response.data.success) {
-        const categoriesData = response.data.categories
-        setCategories(categoriesData)
-        setFilteredCategories(categoriesData)
+        setCategories(response.data.categories)
+        setFilteredCategories(response.data.categories)
       } else {
         toast.error(response.data.message)
       }
@@ -95,7 +92,7 @@ const Categories = ({ token }) => {
 
     try {
       setLoading(true)
-      const response = await axios.post(
+      const response = await axios.put(
         `${backend_url}/api/category/update`, 
         { _id: editId, name: categoryName }, 
         { headers: { Authorization: token } }
@@ -132,10 +129,12 @@ const Categories = ({ token }) => {
 
     try {
       setLoading(true)
-      const response = await axios.post(
+      const response = await axios.delete(
         `${backend_url}/api/category/delete`, 
-        { _id: id }, 
-        { headers: { Authorization: token } }
+        { 
+          headers: { Authorization: token },
+          data: { _id: id }
+        }
       )
       
       if (response.data.success) {
