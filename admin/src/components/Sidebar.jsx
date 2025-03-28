@@ -29,7 +29,7 @@ const Sidebar = ({setToken}) => {
                 <div className='flex sm:flex-col gap-x-5 gap-y-8 sm:pt-10'>
                     <NavLink to={'/'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <MdDashboard />
-                        <div className='hidden lg:flex'>Dashboard</div>
+                        <div className='hidden lg:flex'>Tổng quan</div>
                     </NavLink>
                     <NavLink to={'/products'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <MdProductionQuantityLimits />
@@ -41,15 +41,15 @@ const Sidebar = ({setToken}) => {
                     </NavLink>
                     <NavLink to={'/categories'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <FaTags />
-                        <div className='hidden lg:flex'>Categories</div>
+                        <div className='hidden lg:flex'>Danh mục</div>
                     </NavLink>
                     <NavLink to={'/orders'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <MdFactCheck />
-                        <div className='hidden lg:flex'>Orders</div>
+                        <div className='hidden lg:flex'>Đơn hàng</div>
                     </NavLink>
                     <NavLink to={'/users'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <FaUsers />
-                        <div className='hidden lg:flex'>Users</div>
+                        <div className='hidden lg:flex'>Người dùng</div>
                     </NavLink>
                     <NavLink to={'/promotions'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
                         <MdLocalOffer />

@@ -264,8 +264,10 @@ const checkUserPurchased = async (req, res) => {
             );
             
             // Kiểm tra xem đơn hàng đã thanh toán và đã giao hàng chưa
-            // Chấp nhận cả "Delivered" và "Đã giao hàng"
-            const isDelivered = order.status === "Delivered" || order.status === "Đã giao hàng";
+            // Chấp nhận cả "Delivered" và "Đã giao hàng" và các trạng thái tương ứng
+            const isDelivered = 
+                order.status === "Delivered" || 
+                order.status === "Đã giao hàng";
             
             if (foundItem && order.payment === true && isDelivered) {
                 hasPurchased = true;

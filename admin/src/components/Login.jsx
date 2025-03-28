@@ -59,7 +59,7 @@ const Login = ({setToken}) => {
         <div className='flexCenter w-full sm:w-1/2'>
           <form onSubmit={onSubmitHandler} className='flex flex-col items-center w-[90%] sm:max-w-md m-auto gap-y-5 text-gray-800'>
             <div className='w-full mb-4'>
-              <h3 className="bold-32">Admin Panel</h3>
+              <h3 className="bold-32">Trang Quản Trị</h3>
             </div>
             <div className='w-full'>
               <label htmlFor="email" className='medium-15'>Email</label>
@@ -73,13 +73,13 @@ const Login = ({setToken}) => {
               />
             </div>
             <div className='w-full'>
-              <label htmlFor="password" className='medium-15'>Password</label>
+              <label htmlFor="password" className='medium-15'>Mật khẩu</label>
               <input 
                 onChange={(e) => setPassword(e.target.value)} 
                 value={password} 
                 type="password" 
                 id="password"
-                placeholder='Password' 
+                placeholder='Mật khẩu' 
                 className='w-full px-3 py-1 ring-1 ring-slate-900/10 rounded bg-primary mt-1' 
               />
             </div>

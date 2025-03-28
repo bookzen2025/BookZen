@@ -62,9 +62,9 @@ const Dashboard = ({ token }) => {
       totalCustomers: 89,
       averageOrderValue: 101.45,
       recentOrders: [
-        { _id: 'ord1', date: Date.now() - 86400000, amount: 98, status: 'Delivered', items: 3 },
-        { _id: 'ord2', date: Date.now() - 172800000, amount: 145, status: 'Shipped', items: 2 },
-        { _id: 'ord3', date: Date.now() - 259200000, amount: 65, status: 'Processing', items: 1 },
+        { _id: 'ord1', date: Date.now() - 86400000, amount: 98, status: 'Đã giao hàng', items: 3 },
+        { _id: 'ord2', date: Date.now() - 172800000, amount: 145, status: 'Đã giao cho vận chuyển', items: 2 },
+        { _id: 'ord3', date: Date.now() - 259200000, amount: 65, status: 'Đang xử lý', items: 1 },
       ],
       bestSellers: [
         { _id: 'prod1', name: 'The Great Gatsby', sales: 15, revenue: 450 },
@@ -78,11 +78,11 @@ const Dashboard = ({ token }) => {
         { category: 'Academic', sales: 10, percentage: 11 },
       ],
       orderStatusDistribution: [
-        { status: 'Order Placed', count: 25 },
-        { status: 'Packing', count: 15 },
-        { status: 'Shipped', count: 35 },
-        { status: 'Out for delivery', count: 10 },
-        { status: 'Delivered', count: 39 },
+        { status: 'Đã đặt hàng', count: 25 },
+        { status: 'Đang đóng gói', count: 15 },
+        { status: 'Đã giao cho vận chuyển', count: 35 },
+        { status: 'Đang giao hàng', count: 10 },
+        { status: 'Đã giao hàng', count: 39 },
       ],
       paymentMethodDistribution: [
         { method: 'Stripe', count: 85, amount: 8650 },
@@ -140,7 +140,7 @@ const Dashboard = ({ token }) => {
 
   const SalesChart = ({ data }) => (
     <div className="bg-white rounded-xl p-5 shadow-sm h-full">
-      <h3 className="font-bold mb-4">Monthly Sales</h3>
+      <h3 className="font-bold mb-4">Doanh số hàng tháng</h3>
       <div className="h-64 flex items-end space-x-2">
         {data.map((item, index) => (
           <div key={index} className="flex flex-col items-center">
@@ -159,7 +159,7 @@ const Dashboard = ({ token }) => {
 
   return (
     <div className="px-2 sm:px-8 mt-4 sm:mt-14 pb-8">
-      <h2 className="text-3xl font-bold mb-6">Analytics Dashboard</h2>
+      <h2 className="text-3xl font-bold mb-6">Bảng điều khiển phân tích</h2>
       
       {/* Date Range Selector */}
       <div className="mb-6 flex space-x-2">
@@ -167,19 +167,19 @@ const Dashboard = ({ token }) => {
           onClick={() => setDateRange('week')}
           className={`px-4 py-2 rounded-full text-sm ${dateRange === 'week' ? 'bg-secondary text-white' : 'bg-white'}`}
         >
-          This Week
+          Tuần này
         </button>
         <button 
           onClick={() => setDateRange('month')}
           className={`px-4 py-2 rounded-full text-sm ${dateRange === 'month' ? 'bg-secondary text-white' : 'bg-white'}`}
         >
-          This Month
+          Tháng này
         </button>
         <button 
           onClick={() => setDateRange('year')}
           className={`px-4 py-2 rounded-full text-sm ${dateRange === 'year' ? 'bg-secondary text-white' : 'bg-white'}`}
         >
-          This Year
+          Năm nay
         </button>
       </div>
       
@@ -192,25 +192,25 @@ const Dashboard = ({ token }) => {
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard 
-              title="Total Revenue" 
+              title="Tổng doanh thu" 
               value={`${currency}${stats.totalRevenue.toLocaleString('vi-VN')}`}
               icon={<IoStatsChart className="text-white text-xl" />}
               color="bg-secondary"
             />
             <StatCard 
-              title="Total Orders" 
+              title="Tổng đơn hàng" 
               value={stats.totalOrders} 
               icon={<TbTruckDelivery className="text-white text-xl" />}
               color="bg-secondaryOne"
             />
             <StatCard 
-              title="Products" 
+              title="Sản phẩm" 
               value={stats.totalProducts} 
               icon={<BiBook className="text-white text-xl" />}
               color="bg-green-500"
             />
             <StatCard 
-              title="Customers" 
+              title="Khách hàng" 
               value={stats.totalCustomers} 
               icon={<FiUsers className="text-white text-xl" />}
               color="bg-blue-500"
@@ -223,15 +223,15 @@ const Dashboard = ({ token }) => {
               <SalesChart data={stats.monthlySales} />
             </div>
             <div>
-              <BarChart data={stats.salesByCategory} title="Sales by Category" />
+              <BarChart data={stats.salesByCategory} title="Doanh số theo danh mục" />
             </div>
           </div>
           
           {/* Charts Row 2 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <BarChart data={stats.orderStatusDistribution} title="Order Status" />
+            <BarChart data={stats.orderStatusDistribution} title="Trạng thái đơn hàng" />
             <div className="bg-white rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold mb-4">Payment Methods</h3>
+              <h3 className="font-bold mb-4">Phương thức thanh toán</h3>
               <div className="flex gap-8">
                 {stats.paymentMethodDistribution.map((item, index) => (
                   <div key={index} className="text-center">
@@ -241,7 +241,7 @@ const Dashboard = ({ token }) => {
                       </div>
                     </div>
                     <h4 className="font-bold">{item.method}</h4>
-                    <p className="text-sm text-gray-500">{item.count} orders</p>
+                    <p className="text-sm text-gray-500">{item.count} đơn hàng</p>
                     <p className="font-medium">{currency}{item.amount.toLocaleString('vi-VN')}</p>
                   </div>
                 ))}
@@ -252,14 +252,14 @@ const Dashboard = ({ token }) => {
           {/* Best Sellers & Recent Orders */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold mb-4">Best Selling Products</h3>
+              <h3 className="font-bold mb-4">Sản phẩm bán chạy</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2">Product</th>
-                      <th className="text-right py-2">Sales</th>
-                      <th className="text-right py-2">Revenue</th>
+                      <th className="text-left py-2">Sản phẩm</th>
+                      <th className="text-right py-2">Đã bán</th>
+                      <th className="text-right py-2">Doanh thu</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -276,15 +276,15 @@ const Dashboard = ({ token }) => {
             </div>
             
             <div className="bg-white rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold mb-4">Recent Orders</h3>
+              <h3 className="font-bold mb-4">Đơn hàng gần đây</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2">Date</th>
-                      <th className="text-right py-2">Items</th>
-                      <th className="text-right py-2">Amount</th>
-                      <th className="text-right py-2">Status</th>
+                      <th className="text-left py-2">Ngày</th>
+                      <th className="text-right py-2">Sản phẩm</th>
+                      <th className="text-right py-2">Tổng tiền</th>
+                      <th className="text-right py-2">Trạng thái</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -295,11 +295,13 @@ const Dashboard = ({ token }) => {
                         <td className="text-right py-2">{currency}{order.amount.toLocaleString('vi-VN')}</td>
                         <td className="text-right py-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                            order.status === 'Shipped' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'Đã giao hàng' ? 'bg-green-100 text-green-800' :
+                            order.status === 'Đã giao cho vận chuyển' ? 'bg-blue-100 text-blue-800' :
                             'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {order.status}
+                            {order.status === 'Đã giao hàng' ? 'Đã giao hàng' : 
+                             order.status === 'Đã giao cho vận chuyển' ? 'Đã giao cho vận chuyển' : 
+                             order.status === 'Đang xử lý' ? 'Đang xử lý' : order.status}
                           </span>
                         </td>
                       </tr>

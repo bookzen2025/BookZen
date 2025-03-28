@@ -58,7 +58,7 @@ const Orders = ({ token }) => {
             </div>
             <div>
               <div className='flex items-start gap-1'>
-                <div className='medium-14'>Items:</div>
+                <div className='medium-14'>Sản phẩm:</div>
                 <div className='flex flex-col relative top-0.5'>
                   {order.items.map((item, index) => {
                     if (index === order.items.length - 1) {
@@ -73,31 +73,31 @@ const Orders = ({ token }) => {
                   })}
                 </div>
               </div>
-              <p><span className='text-tertiary medium-14'>Name:</span>{order.address.fullName}</p>
-              <p><span className='text-tertiary medium-14'>Address: </span>
+              <p><span className='text-tertiary medium-14'>Tên:</span>{order.address.fullName}</p>
+              <p><span className='text-tertiary medium-14'>Địa chỉ: </span>
                 <span>{order.address.address + ", "}</span>
                 <span>{order.address.district + ", " + order.address.province}</span>
               </p>
               <p><span className='text-tertiary medium-14'>Email: </span>{order.address.email}</p>
-              <p><span className='text-tertiary medium-14'>Phone: </span>{order.address.phone}</p>
+              <p><span className='text-tertiary medium-14'>Điện thoại: </span>{order.address.phone}</p>
             </div>
             <div>
-              <p><span className='text-tertiary medium-14'>Total: </span>{order.items.length}</p>
-              <p><span className='text-tertiary medium-14'>Method: </span>{order.paymentMethod}</p>
-              <p><span className='text-tertiary medium-14'>Payment: </span>
+              <p><span className='text-tertiary medium-14'>Tổng số: </span>{order.items.length}</p>
+              <p><span className='text-tertiary medium-14'>Phương thức: </span>{order.paymentMethod}</p>
+              <p><span className='text-tertiary medium-14'>Thanh toán: </span>
                 <span className={order.payment ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                  {order.payment ? "Done" : "Pending"}
+                  {order.payment ? "Hoàn thành" : "Chưa thanh toán"}
                 </span>
               </p>
-              <p><span className='text-tertiary medium-14'>Date: </span>{new Date(order.date).toLocaleDateString()}</p>
+              <p><span className='text-tertiary medium-14'>Ngày đặt: </span>{new Date(order.date).toLocaleDateString()}</p>
             </div>
-            <p><span className='text-tertiary medium-14'>Price: </span>{currency}{order.amount}</p>
+            <p><span className='text-tertiary medium-14'>Giá: </span>{currency}{order.amount}</p>
             <select onChange={(event) => statusHandler(event, order._id)} value={order.status} className='p-1 ring-1 ring-slate-900/5 rounded max-w-36 bg-primary text-xs font-semibold'>
-              <option value="Order Placed">Order Placed</option>
-              <option value="Packing">Packing</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Out for delivery">Out for delivery</option>
-              <option value="Delivered">Delivered</option>
+              <option value="Đã đặt hàng">Đã đặt hàng</option>
+              <option value="Đang đóng gói">Đang đóng gói</option>
+              <option value="Đã giao cho vận chuyển">Đã giao cho vận chuyển</option>
+              <option value="Đang giao hàng">Đang giao hàng</option>
+              <option value="Đã giao hàng">Đã giao hàng</option>
             </select>
           </div>
         ))}

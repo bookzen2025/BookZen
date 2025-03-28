@@ -213,24 +213,24 @@ const Products = ({ token }) => {
       {/* Form thêm/chỉnh sửa sản phẩm */}
       <form onSubmit={onSubmitHandler} className='flex flex-col gap-y-3 medium-14 lg:w-[777px] bg-white p-4 rounded-lg mb-8'>
         <div className='w-full'>
-          <h5 className='h5'>Product Name</h5>
-          <input onChange={(e) => setName(e.target.value)} value={name} type="text" placeholder='Write here..' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
+          <h5 className='h5'>Tên sản phẩm</h5>
+          <input onChange={(e) => setName(e.target.value)} value={name} type="text" placeholder='Nhập tên sách...' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
         </div>
         
         <div className='w-full'>
-          <h5 className='h5'>Author</h5>
-          <input onChange={(e) => setAuthor(e.target.value)} value={author} type="text" placeholder='Author Name' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
+          <h5 className='h5'>Tác giả</h5>
+          <input onChange={(e) => setAuthor(e.target.value)} value={author} type="text" placeholder='Tên tác giả' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
         </div>
         
         <div className='w-full'>
-          <h5 className='h5'>Product description</h5>
-          <textarea onChange={(e) => setDescription(e.target.value)} value={description} type="text" rows={5} placeholder='Write here..' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
+          <h5 className='h5'>Mô tả sản phẩm</h5>
+          <textarea onChange={(e) => setDescription(e.target.value)} value={description} type="text" rows={5} placeholder='Nhập mô tả...' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
         </div>
         
         <div className='flex flex-wrap gap-x-6 gap-y-3'>
           {/* categories */}
           <div>
-            <h5 className='h5'>Category</h5>
+            <h5 className='h5'>Danh mục</h5>
             {categories.length > 0 ? (
               <select 
                 onChange={(e) => setCategory(e.target.value)} 
@@ -265,18 +265,18 @@ const Products = ({ token }) => {
         
         <div className='flex flex-wrap gap-x-6 gap-y-3'>
           <div>
-            <h5 className='h5'>Price</h5>
-            <input onChange={(e) => setPrice(e.target.value)} value={price} type="number" placeholder='Price' min={0} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-32' />
+            <h5 className='h5'>Giá</h5>
+            <input onChange={(e) => setPrice(e.target.value)} value={price} type="number" placeholder='Giá tiền' min={0} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-32' />
           </div>
           
           <div>
-            <h5 className='h5'>Published Year</h5>
-            <input onChange={(e) => setPublishedYear(e.target.value)} value={publishedYear} type="number" placeholder='Year' min={1800} max={2025} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-24' />
+            <h5 className='h5'>Năm xuất bản</h5>
+            <input onChange={(e) => setPublishedYear(e.target.value)} value={publishedYear} type="number" placeholder='Năm' min={1800} max={2025} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-24' />
           </div>
           
           <div>
-            <h5 className='h5'>Pages</h5>
-            <input onChange={(e) => setPages(e.target.value)} value={pages} type="number" placeholder='Pages' min={1} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-20' />
+            <h5 className='h5'>Số trang</h5>
+            <input onChange={(e) => setPages(e.target.value)} value={pages} type="number" placeholder='Số trang' min={1} className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white w-20' />
           </div>
 
           <div>
@@ -293,18 +293,18 @@ const Products = ({ token }) => {
         </div>
         
         <div className='w-full'>
-          <h5 className='h5'>Publisher</h5>
-          <input onChange={(e) => setPublisher(e.target.value)} value={publisher} type="text" placeholder='Publisher Name' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
+          <h5 className='h5'>Nhà xuất bản</h5>
+          <input onChange={(e) => setPublisher(e.target.value)} value={publisher} type="text" placeholder='Tên nhà xuất bản' className='px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-white mt-1 w-full max-w-lg' />
         </div>
         
         <div className='flexStart gap-2 my-2'>
           <input onChange={(e) => setPopular((prev) => !prev)} type="checkbox" checked={popular} id='popular' />
-          <label htmlFor="popular" className='cursor-pointer'>Add to popular</label>
+          <label htmlFor="popular" className='cursor-pointer'>Thêm vào danh mục phổ biến</label>
         </div>
         
         <div className='flexStart gap-2 my-2'>
           <input onChange={(e) => setNewArrivals((prev) => !prev)} type="checkbox" checked={newArrivals} id='newArrivals' />
-          <label htmlFor="newArrivals" className='cursor-pointer'>Add to new arrivals</label>
+          <label htmlFor="newArrivals" className='cursor-pointer'>Thêm vào danh mục mới về</label>
         </div>
         
         <div className='flex gap-3'>
