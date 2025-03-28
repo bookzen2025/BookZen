@@ -16,7 +16,7 @@ import { FaRegCalendarAlt, FaChartPie, FaChartLine, FaStar } from "react-icons/f
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import StatCard from '../components/StatCard';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Filler } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 // Đăng ký các thành phần cần thiết từ Chart.js
@@ -29,7 +29,8 @@ ChartJS.register(
   BarElement, 
   PointElement, 
   LineElement,
-  Title
+  Title,
+  Filler
 );
 
 // Dữ liệu mẫu mặc định
@@ -112,36 +113,55 @@ const Dashboard = ({ token }) => {
   const chartsRef = useRef(null);
 
   useEffect(() => {
+    // Log cho debugging
+    console.log("Dashboard useEffect triggered");
+    console.log("Current token value:", token);
+    
     // Chỉ fetch data khi đã có token
     if (token) {
-    fetchDashboardData();
+      console.log("Token exists, calling fetchDashboardData");
+      fetchDashboardData();
     } else {
+      console.log("No token, using mock data");
       // Dữ liệu mẫu khi không có token (cho phép trình duyệt hiển thị trang mà không bị lỗi)
       setMockData();
     }
     
-    // Thêm hiệu ứng scroll
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-fadeIn');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
+    // Thêm hiệu ứng scroll với một thời gian chờ để đảm bảo DOM đã render
+    setTimeout(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animate-fadeIn');
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      
+      const elements = document.querySelectorAll('.animate-on-scroll');
+      console.log("Found animate-on-scroll elements:", elements.length);
+      
+      if (elements.length > 0) {
+        elements.forEach(el => observer.observe(el));
+      } else {
+        console.log("No animation elements found, will try again on next render");
+      }
+      
+      return () => {
+        if (elements.length > 0) {
+          elements.forEach(el => observer.unobserve(el));
+        }
+      };
+    }, 500); // Chờ 500ms để đảm bảo DOM đã render
     
-    const elements = document.querySelectorAll('.animate-on-scroll');
-    elements.forEach(el => observer.observe(el));
-    
-    return () => {
-      elements.forEach(el => observer.unobserve(el));
-    };
   }, [token, dateRange]);
 
   const fetchDashboardData = async () => {
     try {
+      console.log("Fetching dashboard data...");
+      console.log("Using backend URL:", backend_url);
       setIsLoading(true);
       setError(null);
       const response = await axios.post(
@@ -150,15 +170,43 @@ const Dashboard = ({ token }) => {
         { headers: { Authorization: token } }
       );
       
+      console.log("API response:", response.data);
+      
       if (response.data.success) {
-        setStats(response.data.stats);
+        console.log("Data fetched successfully:", response.data.stats);
         
-        // Set comparison stats (normally this would come from the API)
+        // Kết hợp dữ liệu từ API với dữ liệu mẫu cho các trường thiếu
+        const apiStats = response.data.stats || {};
+        
+        // Tạo đối tượng stats mới với dữ liệu từ API hoặc sử dụng dữ liệu mẫu nếu thiếu
+        const combinedStats = {
+          totalRevenue: apiStats.totalRevenue || defaultData.totalRevenue,
+          totalOrders: apiStats.totalOrders || defaultData.totalOrders,
+          totalProducts: apiStats.totalProducts || defaultData.totalProducts,
+          totalCustomers: apiStats.totalCustomers || defaultData.totalCustomers,
+          averageOrderValue: apiStats.averageOrderValue || defaultData.averageOrderValue,
+          
+          // Sử dụng dữ liệu từ API nếu có, nếu không dùng dữ liệu mẫu
+          recentOrders: apiStats.recentOrders || defaultData.recentOrders,
+          bestSellers: apiStats.bestSellers || defaultData.bestSellers,
+          salesByCategory: apiStats.salesByCategory || defaultData.salesByCategory,
+          orderStatusDistribution: apiStats.orderStatusDistribution || defaultData.orderStatusDistribution,
+          paymentMethodDistribution: apiStats.paymentMethodDistribution || defaultData.paymentMethodDistribution,
+          monthlySales: apiStats.monthlySales || defaultData.monthlySales,
+          dailyActivities: apiStats.dailyActivities || defaultData.dailyActivities
+        };
+        
+        console.log("Combined stats:", combinedStats);
+        
+        // Cập nhật state với dữ liệu đã kết hợp
+        setStats(combinedStats);
+        
+        // Set comparison stats (bình thường sẽ từ API)
         setComparisonStats({
-          revenue: { value: response.data.stats.totalRevenue, percentage: 12.5, trend: 'up' },
-          orders: { value: response.data.stats.totalOrders, percentage: 8.2, trend: 'up' },
-          customers: { value: response.data.stats.totalCustomers, percentage: 5.1, trend: 'up' },
-          aov: { value: response.data.stats.averageOrderValue, percentage: 2.3, trend: 'down' }
+          revenue: { value: combinedStats.totalRevenue, percentage: 12.5, trend: 'up' },
+          orders: { value: combinedStats.totalOrders, percentage: 8.2, trend: 'up' },
+          customers: { value: combinedStats.totalCustomers, percentage: 5.1, trend: 'up' },
+          aov: { value: combinedStats.averageOrderValue, percentage: 2.3, trend: 'down' }
         });
       } else {
         console.error('API response indicates failure:', response.data.message);
@@ -171,11 +219,16 @@ const Dashboard = ({ token }) => {
       toast.error('Error fetching dashboard data');
     } finally {
       setIsLoading(false);
+      console.log("Loading state set to false");
+      // Kiểm tra giá trị state sau khi cập nhật
+      console.log("Current stats after fetch:", stats);
+      console.log("Current isLoading state:", isLoading);
     }
   };
 
   // Tạo dữ liệu mẫu để tránh lỗi undefined
   const setMockData = () => {
+    console.log("Setting mock data...");
     setStats(defaultData);
     
     // Set comparison stats
@@ -187,6 +240,8 @@ const Dashboard = ({ token }) => {
     });
     
     setIsLoading(false);
+    console.log("Mock data set, isLoading set to false");
+    console.log("Current stats after mock:", stats);
   };
 
   // Chart Config for Sales
@@ -647,6 +702,8 @@ const Dashboard = ({ token }) => {
         }
       />
       
+      {console.log("Rendering component with isLoading:", isLoading, "and error:", error)}
+      
       {isLoading ? (
         <div className="flex justify-center items-center h-60">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent"></div>
@@ -663,9 +720,11 @@ const Dashboard = ({ token }) => {
           </button>
         </div>
       ) : (
-        <>
+        <div className="dashboard-content">
+          {console.log("Rendering data with stats:", stats)}
+          
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 animate-on-scroll opacity-0 stagger-animation">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <StatCard 
               title="Doanh thu"
               value={`${currency}${stats.totalRevenue.toLocaleString('vi-VN')}`}
@@ -717,8 +776,8 @@ const Dashboard = ({ token }) => {
           </div>
           
           {/* Main charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" ref={chartsRef}>
-            <div className="lg:col-span-2 animate-on-scroll opacity-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
               <Card 
                 title="Phân tích doanh số" 
                 action={
@@ -734,7 +793,7 @@ const Dashboard = ({ token }) => {
               </Card>
             </div>
             
-            <div className="animate-on-scroll opacity-0">
+            <div>
               <Card title="Bán hàng theo danh mục">
                 <div className="h-80">
                   <Doughnut data={categorySalesData} options={categorySalesOptions} />
@@ -744,42 +803,42 @@ const Dashboard = ({ token }) => {
           </div>
           
           {/* Second row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 animate-on-scroll opacity-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
               <RecentOrders orders={stats.recentOrders} />
             </div>
             
-            <div className="animate-on-scroll opacity-0">
+            <div>
               <BestSellers products={stats.bestSellers} />
-                      </div>
-                    </div>
+            </div>
+          </div>
 
           {/* Third row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="animate-on-scroll opacity-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div>
               <Card title="Phân bố trạng thái đơn hàng">
                 <div className="h-64">
                   <Doughnut data={orderStatusData} options={orderStatusOptions} />
                 </div>
               </Card>
-                  </div>
+            </div>
             
-            <div className="lg:col-span-2 animate-on-scroll opacity-0">
+            <div className="lg:col-span-2">
               <Card title="Hoạt động trong tuần">
                 <div className="h-64">
                   <Bar data={activityChartData} options={activityChartOptions} />
-              </div>
+                </div>
               </Card>
             </div>
           </div>
           
           {/* Fourth row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="animate-on-scroll opacity-0">
+            <div>
               <PaymentMethods data={stats.paymentMethodDistribution} />
             </div>
             
-            <div className="lg:col-span-2 animate-on-scroll opacity-0">
+            <div className="lg:col-span-2">
               <Card 
                 title="Sắp tới"
                 icon={<IoCalendarOutline className="mr-2" />}
@@ -809,28 +868,12 @@ const Dashboard = ({ token }) => {
                     </div>
                     <p className="text-small text-textSecondary">Chuẩn bị quà tặng khách hàng dịp Tết</p>
                   </div>
-              </div>
+                </div>
               </Card>
             </div>
           </div>
-        </>
+        </div>
       )}
-      
-      {/* CSS animations */}
-      <style jsx="true">{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-out forwards;
-        }
-        
-        .animate-on-scroll {
-          transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-      `}</style>
     </div>
   );
 };
