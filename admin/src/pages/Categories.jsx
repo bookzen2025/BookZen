@@ -1,315 +1,352 @@
 import React, { useState, useEffect } from 'react'
-import { FaEdit, FaTrash, FaSortAlphaDown, FaSortAlphaUp } from 'react-icons/fa'
-import axios from 'axios'
-import { backend_url } from '../App'
-import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toastConfig'
-import upload_icon from "../assets/upload_icon.png"
+import { backend_url } from "../App"
+import axios from "axios"
+import { toast } from "react-toastify"
+import { FaFolderOpen, FaEdit, FaTrash, FaPlus, FaSearch } from "react-icons/fa"
+import PageHeader from '../components/PageHeader'
+import Card from '../components/Card'
 
 const Categories = ({ token }) => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
-  const [sortOrder, setSortOrder] = useState('asc') // Thêm state cho sắp xếp
-  
-  // State cho form thêm/cập nhật danh mục
+  const [isAdding, setIsAdding] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [categoryId, setCategoryId] = useState('')
-  const [name, setName] = useState('')
-  const [image, setImage] = useState(null)
-  const [previewImage, setPreviewImage] = useState(null)
-  
-  useEffect(() => {
-    getCategories()
-  }, [])
-  
-  // Lấy danh sách danh mục
-  const getCategories = async () => {
-    try {
-      setLoading(true)
-      const response = await axios.get(`${backend_url}/api/category/list`)
-      if (response.data.success) {
-        setCategories(response.data.categories)
-      } else {
-        showErrorToast(response.data.message || "Không thể tải danh sách danh mục")
-      }
-    } catch (error) {
-      console.error("Error fetching categories:", error)
-      showErrorToast("Đã xảy ra lỗi khi tải danh sách danh mục")
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  // Xử lý thay đổi hình ảnh
-  const handleChangeImage = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setImage(file)
-      setPreviewImage(URL.createObjectURL(file))
-    }
-  }
-  
-  // Xử lý thêm/cập nhật danh mục
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!name.trim()) {
-      showErrorToast("Vui lòng nhập tên danh mục")
-      return
-    }
+  const [editId, setEditId] = useState(null)
+  const [categoryName, setCategoryName] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filteredCategories, setFilteredCategories] = useState([])
+
+  const fetchCategories = async () => {
+    if (!token) return null
     
     try {
       setLoading(true)
-      
-      const formData = new FormData()
-      formData.append('name', name)
-      
-      // Thêm hình ảnh vào formData nếu có
-      if (image) {
-        formData.append('image', image)
-      }
-      
-      let response
-      if (isEditing) {
-        // Cập nhật danh mục
-        formData.append('id', categoryId)
-        response = await axios.post(`${backend_url}/api/category/update`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: token
-          }
-        })
-      } else {
-        // Thêm danh mục mới
-        response = await axios.post(`${backend_url}/api/category/create`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: token
-          }
-        })
-      }
+      const response = await axios.post(`${backend_url}/api/category/list`)
       
       if (response.data.success) {
-        showSuccessToast(isEditing ? "Cập nhật danh mục thành công" : "Thêm danh mục thành công")
-        resetForm()
-        getCategories()
+        const categoriesData = response.data.categories
+        setCategories(categoriesData)
+        setFilteredCategories(categoriesData)
       } else {
-        showErrorToast(response.data.message || "Không thể lưu danh mục")
+        toast.error(response.data.message)
       }
     } catch (error) {
-      console.error("Error saving category:", error)
-      showErrorToast(error.response?.data?.message || "Đã xảy ra lỗi khi lưu danh mục")
+      console.log(error)
+      toast.error(error.message)
     } finally {
       setLoading(false)
     }
-  }
-  
-  // Xử lý xóa danh mục
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      return
-    }
-    
-    try {
-      setLoading(true)
-      const response = await axios.post(`${backend_url}/api/category/delete`, { id }, {
-        headers: { Authorization: token }
-      })
-      
-      if (response.data.success) {
-        showSuccessToast("Xóa danh mục thành công")
-        getCategories()
-      } else {
-        showErrorToast(response.data.message || "Không thể xóa danh mục")
-      }
-    } catch (error) {
-      console.error("Error deleting category:", error)
-      showErrorToast(error.response?.data?.message || "Đã xảy ra lỗi khi xóa danh mục")
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  // Xử lý cập nhật danh mục
-  const handleEdit = (category) => {
-    setIsEditing(true)
-    setCategoryId(category._id)
-    setName(category.name)
-    
-    // Đặt lại hình ảnh và bản xem trước nếu có
-    setImage(null)
-    setPreviewImage(category.image || null)
-  }
-  
-  // Reset form
-  const resetForm = () => {
-    setIsEditing(false)
-    setCategoryId('')
-    setName('')
-    setImage(null)
-    setPreviewImage(null)
   }
 
-  // Xử lý sắp xếp danh mục
-  const handleSort = () => {
-    const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc'
-    setSortOrder(newSortOrder)
+  // Lọc danh mục khi searchTerm thay đổi
+  useEffect(() => {
+    if (!categories.length) return
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      const filtered = categories.filter(category => 
+        category.name.toLowerCase().includes(term)
+      )
+      setFilteredCategories(filtered)
+    } else {
+      setFilteredCategories(categories)
+    }
+  }, [searchTerm, categories])
+
+  const addCategoryHandler = async (event) => {
+    event.preventDefault()
     
-    const sortedCategories = [...categories].sort((a, b) => {
-      if (newSortOrder === 'asc') {
-        return a.name.localeCompare(b.name)
-      } else {
-        return b.name.localeCompare(a.name)
-      }
-    })
-    
-    setCategories(sortedCategories)
-  }
-  
-  return (
-    <div className='w-full sm:w-4/5 bg-white p-4 sm:p-10 overflow-y-auto'>
-      <h1 className='text-2xl font-bold mb-6'>Quản lý danh mục</h1>
+    if (!categoryName.trim()) {
+      toast.error('Vui lòng nhập tên danh mục')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await axios.post(
+        `${backend_url}/api/category/create`, 
+        { name: categoryName }, 
+        { headers: { Authorization: token } }
+      )
       
-      {/* Form thêm/cập nhật danh mục */}
-      <div className='bg-gray-100 p-4 rounded-lg mb-6'>
-        <h2 className='text-xl font-semibold mb-4'>{isEditing ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</h2>
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Tên danh mục</label>
-            <input
-              type='text'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500'
-              required
-            />
+      if (response.data.success) {
+        toast.success('Thêm danh mục thành công')
+        setCategoryName('')
+        setIsAdding(false)
+        await fetchCategories()
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const editCategoryHandler = async (event) => {
+    event.preventDefault()
+    
+    if (!categoryName.trim()) {
+      toast.error('Vui lòng nhập tên danh mục')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await axios.post(
+        `${backend_url}/api/category/update`, 
+        { _id: editId, name: categoryName }, 
+        { headers: { Authorization: token } }
+      )
+      
+      if (response.data.success) {
+        toast.success('Cập nhật danh mục thành công')
+        setCategoryName('')
+        setIsEditing(false)
+        setEditId(null)
+        await fetchCategories()
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = (category) => {
+    setCategoryName(category.name)
+    setEditId(category._id)
+    setIsEditing(true)
+    setIsAdding(false)
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await axios.post(
+        `${backend_url}/api/category/delete`, 
+        { _id: id }, 
+        { headers: { Authorization: token } }
+      )
+      
+      if (response.data.success) {
+        toast.success('Xóa danh mục thành công')
+        await fetchCategories()
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddNew = () => {
+    setCategoryName('')
+    setIsAdding(true)
+    setIsEditing(false)
+    setEditId(null)
+  }
+
+  const handleCancel = () => {
+    setCategoryName('')
+    setIsAdding(false)
+    setIsEditing(false)
+    setEditId(null)
+  }
+
+  useEffect(() => {
+    fetchCategories()
+  }, [token])
+
+  return (
+    <div className="space-y-6">
+      <PageHeader 
+        title="Quản lý danh mục" 
+        subtitle="Thêm, sửa và xóa danh mục sản phẩm"
+        actions={
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchCategories}
+              className="p-2 bg-secondary/10 text-secondary rounded-button hover:bg-secondary/20 transition-colors"
+              title="Làm mới"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm danh mục..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50 w-64"
+              />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-20" />
+            </div>
+            <button
+              onClick={handleAddNew}
+              className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-button hover:bg-secondary-dark transition-colors"
+            >
+              <FaPlus size={14} />
+              <span>Thêm danh mục mới</span>
+            </button>
           </div>
-          
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Hình ảnh danh mục</label>
-            <div className='mt-2 flex items-center space-x-4'>
-              <label htmlFor="category-image" className='cursor-pointer'>
-                <div className='w-20 h-20 rounded-lg overflow-hidden bg-gray-50 border border-gray-300 flex items-center justify-center'>
-                  {previewImage ? (
-                    <img 
-                      src={previewImage.startsWith('blob:') ? previewImage : `${backend_url}${previewImage}`} 
-                      alt="Hình ảnh danh mục" 
-                      className='h-full w-full object-cover'
-                    />
-                  ) : (
-                    <img 
-                      src={upload_icon} 
-                      alt="Upload" 
-                      className='h-10 w-10 opacity-60'
-                    />
-                  )}
-                </div>
-                <input
-                  type="file"
-                  id="category-image"
-                  onChange={handleChangeImage}
-                  className='hidden'
-                  accept="image/*"
-                />
-              </label>
-              <div className='text-sm text-gray-500'>
-                Nhấp vào hình ảnh để tải lên. <br/>
-                {image ? `Đã chọn: ${image.name}` : 'Chưa chọn file nào'}
+        }
+      />
+
+      {/* Form thêm danh mục mới */}
+      {isAdding && (
+        <Card>
+          <form onSubmit={addCategoryHandler} className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-secondary/10 rounded-full">
+                <FaFolderOpen className="text-secondary text-xl" />
+              </div>
+              <h3 className="text-body font-heading">Thêm danh mục mới</h3>
+            </div>
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
+              <input
+                type="text"
+                placeholder="Tên danh mục"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-secondary text-white rounded-button hover:bg-secondary-dark transition-colors"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang xử lý...' : 'Thêm danh mục'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
+                >
+                  Hủy
+                </button>
               </div>
             </div>
-          </div>
-          
-          <div className='flex space-x-4'>
-            <button
-              type='submit'
-              disabled={loading}
-              className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50'
-            >
-              {loading ? 'Đang xử lý...' : isEditing ? 'Cập nhật' : 'Thêm mới'}
-            </button>
-            {isEditing && (
-              <button
-                type='button'
-                onClick={resetForm}
-                className='inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-              >
-                Hủy
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
-      
-      {/* Danh sách danh mục */}
-      <div className='overflow-x-auto'>
-        <div className='flex justify-end mb-4'>
-          <button
-            onClick={handleSort}
-            className='flex items-center space-x-1 px-3 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors'
-          >
-            <span>Sắp xếp</span>
-            {sortOrder === 'asc' ? <FaSortAlphaDown /> : <FaSortAlphaUp />}
-          </button>
+          </form>
+        </Card>
+      )}
+
+      {/* Form chỉnh sửa danh mục */}
+      {isEditing && (
+        <Card>
+          <form onSubmit={editCategoryHandler} className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-info/10 rounded-full">
+                <FaEdit className="text-info text-xl" />
+              </div>
+              <h3 className="text-body font-heading">Chỉnh sửa danh mục</h3>
+            </div>
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
+              <input
+                type="text"
+                placeholder="Tên danh mục"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-info text-white rounded-button hover:bg-info-dark transition-colors"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang xử lý...' : 'Cập nhật'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {loading && !isAdding && !isEditing ? (
+        <div className="flex justify-center items-center h-60">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent"></div>
         </div>
-        <table className='min-w-full divide-y divide-gray-200'>
-          <thead className='bg-indigo-50'>
-            <tr>
-              <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                Hình ảnh
-              </th>
-              <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                Tên
-              </th>
-              <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider'>
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-          <tbody className='bg-white divide-y divide-gray-200'>
-            {categories.length > 0 ? (
-              categories.map((category) => (
-                <tr key={category._id}>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm'>
-                    {category.image ? (
-                      <img 
-                        src={`${backend_url}${category.image}`}
-                        alt={category.name} 
-                        className='h-10 w-10 rounded-full object-cover'
-                      />
-                    ) : (
-                      <div className='h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium'>
-                        {category.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                    {category.name}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                    <button
-                      onClick={() => handleEdit(category)}
-                      className='text-indigo-600 hover:text-indigo-900 mr-4'
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(category._id)}
-                      className='text-red-600 hover:text-red-900'
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
+      ) : filteredCategories.length === 0 ? (
+        <Card>
+          <div className="text-center py-10">
+            <FaFolderOpen className="mx-auto text-5xl text-gray-20 mb-3" />
+            <p className="text-textSecondary mb-1">Không tìm thấy danh mục nào</p>
+            <p className="text-small text-gray-20">Thử thay đổi từ khóa tìm kiếm hoặc thêm danh mục mới</p>
+          </div>
+        </Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-10">
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Tên danh mục</th>
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">ID</th>
+                  <th className="px-4 py-3 text-right font-medium text-textSecondary">Thao tác</th>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan='3' className='px-6 py-4 text-center text-sm text-gray-500'>
-                  {loading ? 'Đang tải...' : 'Không có danh mục nào'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {filteredCategories.map((category) => (
+                  <tr key={category._id} className="border-b border-gray-10 hover:bg-gray-5">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-secondary/10 rounded-full">
+                          <FaFolderOpen className="text-secondary" />
+                        </div>
+                        <span className="font-medium">{category.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-textSecondary">{category._id}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(category)}
+                          className="p-2 bg-info/10 text-info rounded-full hover:bg-info/20 transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(category._id)}
+                          className="p-2 bg-error/10 text-error rounded-full hover:bg-error/20 transition-colors"
+                          title="Xóa"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   )
 }

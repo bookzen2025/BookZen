@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Sidebar from './components/Sidebar'
+import Header from './components/Header'
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom'
 import Products from './pages/Products'
 import Orders from './pages/Orders'
@@ -69,17 +70,17 @@ const App = () => {
   // Hiển thị màn hình loading trong quá trình xác thực
   if (isVerifying) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-primary">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-700">Đang xác thực...</p>
+          <div className="w-16 h-16 border-4 border-secondary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-textSecondary">Đang xác thực...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <main>
+    <main className="bg-background text-textPrimary min-h-screen">
       <ToastContainer 
         position="top-right"
         autoClose={1500}
@@ -96,18 +97,25 @@ const App = () => {
       {token === "" ? (
         <Login setToken={setToken} />
       ) : (
-        <div className='bg-primary text-[#404040]'>
-          <div className='mx-auto max-w-[1440px] flex flex-col sm:flex-row'>
-            <Sidebar setToken={setToken}/>
-            <Routes>
-              <Route path='/' element={<Dashboard token={token}/>} />
-              <Route path='/products' element={<Products token={token}/>} />
-              <Route path='/inventory' element={<Inventory token={token}/>} />
-              <Route path='/orders' element={<Orders token={token}/>} />
-              <Route path='/categories' element={<Categories token={token}/>} />
-              <Route path='/users' element={<Users token={token}/>} />
-              <Route path='/promotions' element={<Promotions token={token}/>} />
-            </Routes>
+        <div className="flex h-screen overflow-hidden">
+          <Sidebar setToken={setToken}/>
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Header />
+            
+            <div className="flex-1 overflow-auto px-6 py-6">
+              <div className="container mx-auto">
+                <Routes>
+                  <Route path='/' element={<Dashboard token={token}/>} />
+                  <Route path='/products' element={<Products token={token}/>} />
+                  <Route path='/inventory' element={<Inventory token={token}/>} />
+                  <Route path='/orders' element={<Orders token={token}/>} />
+                  <Route path='/categories' element={<Categories token={token}/>} />
+                  <Route path='/users' element={<Users token={token}/>} />
+                  <Route path='/promotions' element={<Promotions token={token}/>} />
+                </Routes>
+              </div>
+            </div>
           </div>
         </div>
       )}

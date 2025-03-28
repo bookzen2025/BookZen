@@ -2,405 +2,482 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { backend_url, currency } from '../App';
 import { toast } from 'react-toastify';
-import { FaSearch, FaSortNumericDown, FaSortNumericUp } from 'react-icons/fa';
-import { BiImport, BiExport } from 'react-icons/bi';
-import { IoMdRefresh } from 'react-icons/io';
+import { FaArchive, FaEdit, FaSearch, FaExclamationTriangle } from 'react-icons/fa';
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import StatCard from '../components/StatCard';
 
 // File: Inventory.jsx
 // Trang quản lý hàng tồn kho, cho phép xem và cập nhật tồn kho của tất cả sản phẩm
+// Cải thiện giao diện: Thêm hiệu ứng animation, cải thiện hover, thiết kế tổng thể
 
 const Inventory = ({ token }) => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({
-    key: 'stock',
-    direction: 'asc'
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [stockValue, setStockValue] = useState('');
+
+  // Thống kê
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalStock: 0,
+    lowStockProducts: 0,
+    outOfStockProducts: 0
   });
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [categories, setCategories] = useState([]);
-  const [stockAlerts, setStockAlerts] = useState([]);
 
-  // Fetch products on mount
-  useEffect(() => {
-    fetchInventory();
-    fetchCategories();
-  }, []);
-
-  // Fetch all products with inventory information
   const fetchInventory = async () => {
+    if (!token) return null;
+    
     try {
       setLoading(true);
-      const response = await axios.get(`${backend_url}/api/product/inventory`, {
-        headers: { Authorization: token }
-      });
+      const response = await axios.post(
+        `${backend_url}/api/product/list`,
+        {},
+        { headers: { Authorization: token } }
+      );
       
       if (response.data.success) {
-        setProducts(response.data.inventory);
-        checkLowStock(response.data.inventory);
+        const productsData = response.data.products;
+        setProducts(productsData);
+        setFilteredProducts(productsData);
+        
+        // Tính toán thống kê
+        const totalProducts = productsData.length;
+        const totalStock = productsData.reduce((sum, product) => sum + product.stock, 0);
+        const lowStockProducts = productsData.filter(product => product.stock > 0 && product.stock <= 10).length;
+        const outOfStockProducts = productsData.filter(product => product.stock === 0).length;
+        
+        setStats({
+          totalProducts,
+          totalStock,
+          lowStockProducts,
+          outOfStockProducts
+        });
       } else {
-        toast.error(response.data.message || 'Không thể tải thông tin tồn kho');
+        toast.error(response.data.message);
       }
     } catch (error) {
-      console.error('Error fetching inventory:', error);
-      toast.error('Đã xảy ra lỗi khi tải thông tin tồn kho');
+      console.log(error);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch categories for filter
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${backend_url}/api/category/list`);
+      const response = await axios.post(`${backend_url}/api/category/list`);
       if (response.data.success) {
         setCategories(response.data.categories);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.log(error);
     }
   };
 
-  // Check for low stock items
-  const checkLowStock = (items) => {
-    const LOW_STOCK_THRESHOLD = 5;
-    const lowStockItems = items.filter(item => item.stock <= LOW_STOCK_THRESHOLD);
-    setStockAlerts(lowStockItems);
+  useEffect(() => {
+    fetchInventory();
+    fetchCategories();
+  }, [token]);
+
+  // Lọc sản phẩm khi searchTerm hoặc filters thay đổi
+  useEffect(() => {
+    if (!products.length) return;
+
+    let filtered = [...products];
     
-    if (lowStockItems.length > 0) {
-      toast.warning(`Có ${lowStockItems.length} sản phẩm sắp hết hàng!`);
+    // Lọc theo từ khóa tìm kiếm
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(term) ||
+        product.sku?.toLowerCase().includes(term) ||
+        product.description?.toLowerCase().includes(term)
+      );
     }
-  };
+    
+    // Lọc theo danh mục
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(product => product.category?._id === categoryFilter);
+    }
+    
+    // Lọc theo tình trạng tồn kho
+    if (stockFilter !== 'all') {
+      switch (stockFilter) {
+        case 'outOfStock':
+          filtered = filtered.filter(product => product.stock === 0);
+          break;
+        case 'lowStock':
+          filtered = filtered.filter(product => product.stock > 0 && product.stock <= 10);
+          break;
+        case 'inStock':
+          filtered = filtered.filter(product => product.stock > 10);
+          break;
+      }
+    }
+    
+    setFilteredProducts(filtered);
+  }, [searchTerm, categoryFilter, stockFilter, products]);
 
-  // Update product stock
-  const handleUpdateStock = async (id, newStock) => {
+  const handleUpdateStock = async (e) => {
+    e.preventDefault();
+    
+    if (!editingProduct) return;
+    
     try {
+      setLoading(true);
+      const newStock = parseInt(stockValue);
+      
+      if (isNaN(newStock) || newStock < 0) {
+        toast.error('Vui lòng nhập số lượng hợp lệ');
+        return;
+      }
+      
       const response = await axios.post(
         `${backend_url}/api/product/update-stock`,
-        { id, stock: newStock },
+        { 
+          productId: editingProduct._id, 
+          stock: newStock 
+        },
         { headers: { Authorization: token } }
       );
       
       if (response.data.success) {
         toast.success('Cập nhật tồn kho thành công');
-        
-        // Update local state
-        setProducts(prevProducts => 
-          prevProducts.map(product => 
-            product._id === id ? { ...product, stock: newStock } : product
-          )
-        );
-        
-        // Check if we need to update alerts
-        if (newStock <= 5) {
-          checkLowStock(products.map(product => 
-            product._id === id ? { ...product, stock: newStock } : product
-          ));
-        } else {
-          // If stock is now above threshold, we might need to remove from alerts
-          setStockAlerts(prev => prev.filter(item => item._id !== id));
-        }
+        setEditingProduct(null);
+        setStockValue('');
+        await fetchInventory();
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
-      console.error('Error updating stock:', error);
-      toast.error('Đã xảy ra lỗi khi cập nhật tồn kho');
+      console.log(error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle sort
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setStockValue(product.stock.toString());
   };
 
-  // Get sorted and filtered products
-  const getSortedProducts = () => {
-    // First apply category filter
-    let filteredProducts = selectedCategory === 'all' 
-      ? products 
-      : products.filter(product => product.category === selectedCategory);
-    
-    // Then apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filteredProducts = filteredProducts.filter(product => 
-        product.name.toLowerCase().includes(searchLower) ||
-        product.category.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Then apply sorting
-    return [...filteredProducts].sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
+  const handleCancel = () => {
+    setEditingProduct(null);
+    setStockValue('');
   };
 
-  // Get stock status class
-  const getStockStatusClass = (stock) => {
-    if (stock <= 0) return 'text-red-600 font-bold';
-    if (stock <= 5) return 'text-orange-500 font-bold';
-    return 'text-green-600';
+  // Hàm lấy màu cho trạng thái tồn kho
+  const getStockStatusColor = (stock) => {
+    if (stock === 0) return 'bg-error/10 text-error';
+    if (stock <= 10) return 'bg-warning/10 text-warning';
+    return 'bg-success/10 text-success';
+  };
+
+  // Hàm lấy nhãn cho trạng thái tồn kho
+  const getStockStatusLabel = (stock) => {
+    if (stock === 0) return 'Hết hàng';
+    if (stock <= 10) return 'Sắp hết';
+    return 'Còn hàng';
   };
 
   return (
-    <div className="px-4 sm:px-8 py-6 w-full">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Quản lý hàng tồn kho</h1>
-        <p className="text-gray-600">Theo dõi và cập nhật số lượng sản phẩm trong kho</p>
-      </div>
-
-      {/* Alerts */}
-      {stockAlerts.length > 0 && (
-        <div className="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+    <div className="space-y-6">
+      <PageHeader 
+        title="Quản lý kho hàng" 
+        subtitle="Theo dõi và cập nhật số lượng tồn kho sản phẩm"
+        actions={
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchInventory}
+              className="p-2 bg-secondary/10 text-secondary rounded-button hover:bg-secondary/20 transition-colors"
+              title="Làm mới"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-orange-700">
-                Có {stockAlerts.length} sản phẩm có số lượng tồn kho thấp (≤ 5)
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters and Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          {/* Search */}
+            </button>
           <div className="relative">
             <input
               type="text"
               placeholder="Tìm kiếm sản phẩm..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg w-full sm:w-64"
-            />
-            <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                className="pl-10 pr-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50 w-64"
+              />
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-20" />
+            </div>
+          </div>
+        }
+      />
+
+      {/* Thống kê */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard 
+          title="Tổng số sản phẩm"
+          value={stats.totalProducts}
+          icon={<FaArchive />}
+          colorClass="bg-secondary/10 text-secondary"
+        />
+        <StatCard 
+          title="Tổng tồn kho"
+          value={stats.totalStock}
+          description="sản phẩm"
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>}
+          colorClass="bg-info/10 text-info"
+        />
+        <StatCard 
+          title="Sắp hết hàng"
+          value={stats.lowStockProducts}
+          description="sản phẩm"
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>}
+          colorClass="bg-warning/10 text-warning"
+        />
+        <StatCard 
+          title="Hết hàng"
+          value={stats.outOfStockProducts}
+          description="sản phẩm"
+          icon={<FaExclamationTriangle />}
+          colorClass="bg-error/10 text-error"
+        />
           </div>
           
-          {/* Category Filter */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 border rounded-lg bg-white"
-          >
-            <option value="all">Tất cả danh mục</option>
-            {categories.map(category => (
-              <option key={category._id} value={category.name}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="flex gap-2 w-full sm:w-auto">
+      {/* Bộ lọc */}
+      <div className="flex flex-wrap gap-4">
+        <div className="bg-white rounded-button p-1">
           <button
-            onClick={fetchInventory}
-            className="flex items-center justify-center gap-1 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+            onClick={() => setStockFilter('all')}
+            className={`px-4 py-2 rounded-button ${
+              stockFilter === 'all' ? 'bg-secondary text-white' : 'text-textPrimary hover:bg-gray-10'
+            }`}
           >
-            <IoMdRefresh />
-            <span>Làm mới</span>
+            Tất cả
           </button>
-          
           <button
-            onClick={() => {
-              // Implementation for export would go here
-              toast.info('Chức năng xuất file sẽ được phát triển trong tương lai');
-            }}
-            className="flex items-center justify-center gap-1 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
+            onClick={() => setStockFilter('inStock')}
+            className={`px-4 py-2 rounded-button ${
+              stockFilter === 'inStock' ? 'bg-secondary text-white' : 'text-textPrimary hover:bg-gray-10'
+            }`}
           >
-            <BiExport />
-            <span>Xuất file</span>
+            Còn hàng
+          </button>
+          <button
+            onClick={() => setStockFilter('lowStock')}
+            className={`px-4 py-2 rounded-button ${
+              stockFilter === 'lowStock' ? 'bg-secondary text-white' : 'text-textPrimary hover:bg-gray-10'
+            }`}
+          >
+            Sắp hết
+          </button>
+          <button
+            onClick={() => setStockFilter('outOfStock')}
+            className={`px-4 py-2 rounded-button ${
+              stockFilter === 'outOfStock' ? 'bg-secondary text-white' : 'text-textPrimary hover:bg-gray-10'
+            }`}
+          >
+            Hết hàng
           </button>
         </div>
+
+        <select 
+          value={categoryFilter} 
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+        >
+          <option value="all">Tất cả danh mục</option>
+          {categories.map(category => (
+            <option key={category._id} value={category._id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Inventory Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Danh mục
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá
-                </th>
-                <th 
-                  scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('stock')}
-                >
-                  <div className="flex items-center">
-                    Tồn kho
-                    {sortConfig.key === 'stock' && (
-                      sortConfig.direction === 'asc' 
-                        ? <FaSortNumericDown className="ml-1" /> 
-                        : <FaSortNumericUp className="ml-1" />
-                    )}
-                  </div>
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center">
-                    <div className="flex justify-center items-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                      <span className="ml-2">Đang tải...</span>
+      {/* Form cập nhật tồn kho */}
+      {editingProduct && (
+        <Card>
+          <form onSubmit={handleUpdateStock} className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-info/10 rounded-full">
+                <FaEdit className="text-info text-xl" />
+              </div>
+              <h3 className="text-body font-heading">Cập nhật tồn kho</h3>
+            </div>
+            
+            <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="h-16 w-16 bg-gray-10 rounded-card overflow-hidden">
+                  {editingProduct.images && editingProduct.images[0] ? (
+                    <img 
+                      src={`${backend_url}${editingProduct.images[0]}`} 
+                      alt={editingProduct.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-10 text-gray-20">
+                      <FaArchive className="text-xl" />
                     </div>
-                  </td>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-medium">{editingProduct.name}</h4>
+                  <p className="text-small text-textSecondary">
+                    {editingProduct.category?.name || 'Chưa phân loại'} · SKU: {editingProduct.sku || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 items-center">
+                <div>
+                  <label className="block text-textSecondary text-small mb-1">Tồn kho hiện tại</label>
+                  <div className="px-4 py-2 bg-gray-5 rounded-button">
+                    <span className="font-medium">{editingProduct.stock}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-textSecondary text-small mb-1">Tồn kho mới</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={stockValue}
+                    onChange={(e) => setStockValue(e.target.value)}
+                    className="w-24 px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-info text-white rounded-button hover:bg-info-dark transition-colors"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang xử lý...' : 'Cập nhật'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {/* Danh sách sản phẩm */}
+      {loading && !editingProduct ? (
+        <div className="flex justify-center items-center h-60">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent"></div>
+                    </div>
+      ) : filteredProducts.length === 0 ? (
+        <Card>
+          <div className="text-center py-10">
+            <FaArchive className="mx-auto text-5xl text-gray-20 mb-3" />
+            <p className="text-textSecondary mb-1">Không tìm thấy sản phẩm nào</p>
+            <p className="text-small text-gray-20">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                    </div>
+        </Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-10">
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Sản phẩm</th>
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Danh mục</th>
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Giá</th>
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Tồn kho</th>
+                  <th className="px-4 py-3 text-right font-medium text-textSecondary">Thao tác</th>
                 </tr>
-              ) : getSortedProducts().length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                    Không tìm thấy sản phẩm nào
-                  </td>
-                </tr>
-              ) : (
-                getSortedProducts().map(product => (
-                  <tr key={product._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <img 
-                            className="h-10 w-10 rounded-md object-cover" 
-                            src={product.image} 
+              </thead>
+              <tbody>
+                {filteredProducts.map((product) => (
+                  <tr key={product._id} className="border-b border-gray-10 hover:bg-gray-5">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-gray-10 rounded-card overflow-hidden">
+                          {product.images && product.images[0] ? (
+                            <img 
+                              src={`${backend_url}${product.images[0]}`} 
                             alt={product.name} 
+                              className="w-full h-full object-cover"
                           />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-10 text-gray-20">
+                              <FaArchive />
+                            </div>
+                          )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-small text-textSecondary">SKU: {product.sku || 'N/A'}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.category}
+                    <td className="px-4 py-3">
+                      {product.category?.name || 'Chưa phân loại'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {currency}{product.price?.toLocaleString('vi-VN')}
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{currency}{product.price.toLocaleString('vi-VN')}</div>
+                      {product.oldPrice && (
+                        <div className="text-small text-error line-through">
+                          {currency}{product.oldPrice.toLocaleString('vi-VN')}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="number"
-                        min="0"
-                        className={`w-20 px-2 py-1 border rounded ${
-                          product.stock <= 0 
-                            ? 'border-red-300 bg-red-50' 
-                            : product.stock <= 5 
-                              ? 'border-orange-300 bg-orange-50' 
-                              : 'border-gray-300'
-                        }`}
-                        defaultValue={product.stock || 0}
-                        onBlur={(e) => {
-                          const newValue = parseInt(e.target.value);
-                          if (newValue !== product.stock) {
-                            handleUpdateStock(product._id, newValue);
-                          }
-                        }}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        product.stock <= 0 
-                          ? 'bg-red-100 text-red-800' 
-                          : product.stock <= 5 
-                            ? 'bg-orange-100 text-orange-800' 
-                            : 'bg-green-100 text-green-800'
-                      }`}>
-                        {product.stock <= 0 
-                          ? 'Hết hàng' 
-                          : product.stock <= 5 
-                            ? 'Sắp hết hàng' 
-                            : 'Còn hàng'}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-small ${getStockStatusColor(product.stock)}`}>
+                          {getStockStatusLabel(product.stock)}
                       </span>
+                        <span className="text-textSecondary">{product.stock}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => {
-                          // Implement quick adjustment
-                          const currentStock = product.stock || 0;
-                          handleUpdateStock(product._id, currentStock + 1);
-                        }}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        +1
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Implement quick adjustment
-                          const currentStock = product.stock || 0;
-                          if (currentStock > 0) {
-                            handleUpdateStock(product._id, currentStock - 1);
-                          }
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                        disabled={product.stock <= 0}
-                      >
-                        -1
-                      </button>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="p-2 bg-info/10 text-info rounded-full hover:bg-info/20 transition-colors"
+                          title="Cập nhật tồn kho"
+                        >
+                          <FaEdit />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ))
-              )}
+                ))}
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500 text-sm">Tổng sản phẩm</h3>
-          <p className="text-2xl font-bold">{products.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500 text-sm">Sản phẩm hết hàng</h3>
-          <p className="text-2xl font-bold text-red-600">
-            {products.filter(p => p.stock <= 0).length}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500 text-sm">Sản phẩm sắp hết</h3>
-          <p className="text-2xl font-bold text-orange-500">
-            {products.filter(p => p.stock > 0 && p.stock <= 5).length}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="text-gray-500 text-sm">Tổng tồn kho</h3>
-          <p className="text-2xl font-bold text-blue-600">
-            {products.reduce((sum, product) => sum + (product.stock || 0), 0)}
-          </p>
-        </div>
-      </div>
+        </Card>
+      )}
     </div>
   );
 };
 
-export default Inventory; 
+export default Inventory;
+
+// Thêm CSS global vào file CSS chính nếu cần
+// @keyframes spin-slow {
+//   to {
+//     transform: rotate(360deg);
+//   }
+// }
+// 
+// .animate-spin-slow {
+//   animation: spin-slow 3s linear infinite;
+// } 

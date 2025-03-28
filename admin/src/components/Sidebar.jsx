@@ -18,56 +18,61 @@ const Sidebar = ({setToken}) => {
         setToken('');
     }
 
+    // Định nghĩa các menu item
+    const menuItems = [
+        { path: '/', icon: <MdDashboard className="text-xl" />, label: 'Tổng quan' },
+        { path: '/products', icon: <MdProductionQuantityLimits className="text-xl" />, label: 'Sản phẩm' },
+        { path: '/inventory', icon: <BsBoxSeam className="text-xl" />, label: 'Tồn kho' },
+        { path: '/categories', icon: <FaTags className="text-xl" />, label: 'Danh mục' },
+        { path: '/orders', icon: <MdFactCheck className="text-xl" />, label: 'Đơn hàng' },
+        { path: '/users', icon: <FaUsers className="text-xl" />, label: 'Người dùng' },
+        { path: '/promotions', icon: <MdLocalOffer className="text-xl" />, label: 'Khuyến mãi' },
+    ];
+
     return (
-        <div className='max-sm:flexCenter max-xs:pb-3 rounded bg-white pb-3 sm:w-1/5 sm:min-h-screen'>
-            <div className='flex flex-col gap-y-6 max-sm:items-center sm:flex-col pt-4 sm:pt-14'>
-                {/* logo */}
-                <Link to={'/'} className='bold-24 flex items-baseline sm:pl-12'>
-                    <img src={logo} alt="logoImg" height={24} width={24} />
-                    <span className='text-secondary pl-2 sm:hidden lg:flex'>BookZen</span>
-                </Link>
-                <div className='flex sm:flex-col gap-x-5 gap-y-8 sm:pt-10'>
-                    <NavLink to={'/'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <MdDashboard />
-                        <div className='hidden lg:flex'>Tổng quan</div>
-                    </NavLink>
-                    <NavLink to={'/products'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <MdProductionQuantityLimits />
-                        <div className='hidden lg:flex'>Sản phẩm</div>
-                    </NavLink>
-                    <NavLink to={'/inventory'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <BsBoxSeam />
-                        <div className='hidden lg:flex'>Tồn kho</div>
-                    </NavLink>
-                    <NavLink to={'/categories'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <FaTags />
-                        <div className='hidden lg:flex'>Danh mục</div>
-                    </NavLink>
-                    <NavLink to={'/orders'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <MdFactCheck />
-                        <div className='hidden lg:flex'>Đơn hàng</div>
-                    </NavLink>
-                    <NavLink to={'/users'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <FaUsers />
-                        <div className='hidden lg:flex'>Người dùng</div>
-                    </NavLink>
-                    <NavLink to={'/promotions'} className={({ isActive }) => isActive ? "active-link" : "flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl"}>
-                        <MdLocalOffer />
-                        <div className='hidden lg:flex'>Khuyến mãi</div>
-                    </NavLink>
-                    {/* Logout button */}
-                    <div className='max-sm:ml-5 sm:mt-60'>
-                        <button 
-                            onClick={handleLogout}
-                            className='flexStart gap-x-2 sm:pl-12 p-5 medium-15 cursor-pointer h-10 rounded-xl hover:bg-gray-100 w-full'
-                        >
-                            <BiLogOut className='text-lg'/>
-                            <div className='hidden lg:flex'>Đăng xuất</div>
-                        </button>
+        <aside className="bg-secondary text-white sm:w-64 max-sm:w-20 min-h-screen transition-all duration-300 ease-in-out">
+            <div className="flex flex-col h-full">
+                {/* Logo */}
+                <Link to={'/'} className="flex items-center p-4 border-b border-secondaryLight/20">
+                    <div className="bg-white p-1 rounded">
+                        <img src={logo} alt="BookZen" className="h-8 w-8" />
                     </div>
+                    <span className="text-xl font-heading ml-3 text-white max-sm:hidden">BookZen</span>
+                </Link>
+                
+                {/* Menu Items */}
+                <nav className="flex-1 py-6 space-y-1 overflow-y-auto">
+                    {menuItems.map((item, index) => (
+                        <NavLink 
+                            key={index}
+                            to={item.path} 
+                            className={({ isActive }) => 
+                                `flex items-center px-4 py-3 text-sm transition-all duration-200 ease-in-out
+                                ${isActive 
+                                    ? 'bg-white/10 border-l-4 border-accent font-medium' 
+                                    : 'hover:bg-white/5 border-l-4 border-transparent'}`
+                            }
+                        >
+                            <span className="flex items-center justify-center w-6 h-6">{item.icon}</span>
+                            <span className="ml-3 max-sm:hidden">{item.label}</span>
+                        </NavLink>
+                    ))}
+                </nav>
+
+                {/* Logout Button */}
+                <div className="p-4 border-t border-secondaryLight/20 mt-auto">
+                    <button 
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-3 text-sm text-white hover:bg-white/5 rounded-button transition-all duration-200 ease-in-out"
+                    >
+                        <span className="flex items-center justify-center w-6 h-6">
+                            <BiLogOut className="text-xl" />
+                        </span>
+                        <span className="ml-3 max-sm:hidden">Đăng xuất</span>
+                    </button>
                 </div>
             </div>
-        </div>
+        </aside>
     )
 }
 

@@ -6,7 +6,11 @@ import { IoStatsChart } from "react-icons/io5";
 import { FiUsers } from "react-icons/fi";
 import { BiBook } from "react-icons/bi";
 import { TbTruckDelivery } from "react-icons/tb";
-import { MdPayment } from "react-icons/md";
+import { MdPayment, MdInventory, MdOutlineShowChart } from "react-icons/md";
+import { FaRegCalendarAlt } from "react-icons/fa";
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import StatCard from '../components/StatCard';
 
 const Dashboard = ({ token }) => {
   const [stats, setStats] = useState({
@@ -89,12 +93,12 @@ const Dashboard = ({ token }) => {
         { method: 'COD', count: 39, amount: 3930 },
       ],
       monthlySales: [
-        { month: 'Jan', sales: 3200 },
-        { month: 'Feb', sales: 3800 },
-        { month: 'Mar', sales: 2800 },
-        { month: 'Apr', sales: 4200 },
-        { month: 'May', sales: 5100 },
-        { month: 'Jun', sales: 4800 },
+        { month: 'T1', sales: 3200 },
+        { month: 'T2', sales: 3800 },
+        { month: 'T3', sales: 2800 },
+        { month: 'T4', sales: 4200 },
+        { month: 'T5', sales: 5100 },
+        { month: 'T6', sales: 4800 },
       ],
     };
     
@@ -102,31 +106,19 @@ const Dashboard = ({ token }) => {
     setIsLoading(false);
   }, []);
 
-  const StatCard = ({ title, value, icon, color }) => (
-    <div className="bg-white rounded-xl p-5 shadow-sm flex justify-between items-center">
-      <div>
-        <p className="text-gray-500 text-sm">{title}</p>
-        <h3 className="text-2xl font-bold mt-1">{value}</h3>
-      </div>
-      <div className={`p-3 rounded-full ${color}`}>
-        {icon}
-      </div>
-    </div>
-  );
-
-  const BarChart = ({ data, title }) => (
-    <div className="bg-white rounded-xl p-5 shadow-sm h-full">
-      <h3 className="font-bold mb-4">{title}</h3>
-      <div className="space-y-4">
+  // Chart Components
+  const BarChart = ({ data, title, className }) => (
+    <Card title={title} className={className}>
+      <div className="space-y-5">
         {data.map((item, index) => (
           <div key={index}>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">{item.category || item.status || item.method}</span>
-              <span className="text-xs text-gray-500">
+            <div className="flex justify-between mb-2">
+              <span className="text-body font-medium">{item.category || item.status || item.method}</span>
+              <span className="text-small text-textSecondary">
                 {item.percentage ? `${item.percentage}%` : item.sales || item.count}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-10 rounded-full h-2">
               <div 
                 className="bg-secondary rounded-full h-2" 
                 style={{ width: `${item.percentage || (item.sales / Math.max(...data.map(d => d.sales)) * 100) || (item.count / Math.max(...data.map(d => d.count)) * 100)}%` }}
@@ -135,181 +127,202 @@ const Dashboard = ({ token }) => {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 
-  const SalesChart = ({ data }) => (
-    <div className="bg-white rounded-xl p-5 shadow-sm h-full">
-      <h3 className="font-bold mb-4">Doanh số hàng tháng</h3>
+  // Sales Chart Component
+  const SalesChart = ({ data, className }) => (
+    <Card 
+      title="Doanh số hàng tháng" 
+      className={className}
+      action={
+        <div className="flex items-center text-small text-textSecondary">
+          <MdOutlineShowChart className="mr-1" />
+          <span>+12.5% so với tháng trước</span>
+        </div>
+      }
+    >
       <div className="h-64 flex items-end space-x-2">
         {data.map((item, index) => (
-          <div key={index} className="flex flex-col items-center">
+          <div key={index} className="flex flex-col items-center flex-1">
             <div 
-              className="bg-secondary rounded-t-md w-10" 
+              className="bg-secondary/80 hover:bg-secondary transition-colors rounded-t-md w-full" 
               style={{ 
                 height: `${(item.sales / Math.max(...data.map(d => d.sales))) * 200}px`,
               }}
             ></div>
-            <span className="text-xs mt-1">{item.month}</span>
+            <span className="text-small mt-2">{item.month}</span>
           </div>
         ))}
       </div>
-    </div>
+    </Card>
+  );
+
+  // Recent Orders Component
+  const RecentOrders = ({ orders }) => (
+    <Card 
+      title="Đơn hàng gần đây" 
+      action={
+        <button className="text-small text-secondary font-medium hover:underline">Xem tất cả</button>
+      }
+    >
+      <div className="space-y-4">
+        {orders.map((order, index) => (
+          <div key={index} className="flex items-center justify-between p-3 border-b border-gray-10 last:border-b-0">
+            <div>
+              <p className="text-body font-medium">#{order._id}</p>
+              <p className="text-small text-textSecondary">
+                {new Date(order.date).toLocaleDateString('vi-VN')} · {order.items} sản phẩm
+              </p>
+            </div>
+            <div className="flex items-center">
+              <span className={`text-small px-2 py-1 rounded-full ${
+                order.status === 'Đã giao hàng' 
+                  ? 'bg-success/10 text-success' 
+                  : order.status === 'Đang xử lý' 
+                  ? 'bg-warning/10 text-warning' 
+                  : 'bg-info/10 text-info'
+              }`}>
+                {order.status}
+              </span>
+              <p className="ml-3 font-medium">{currency}{order.amount.toLocaleString('vi-VN')}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  // Best Sellers Component
+  const BestSellers = ({ products }) => (
+    <Card 
+      title="Sách bán chạy" 
+      action={
+        <button className="text-small text-secondary font-medium hover:underline">Xem chi tiết</button>
+      }
+    >
+      <div className="space-y-4">
+        {products.map((product, index) => (
+          <div key={index} className="flex items-center justify-between p-3 border-b border-gray-10 last:border-b-0">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center text-secondary font-medium mr-3">
+                {index + 1}
+              </div>
+              <div>
+                <p className="text-body font-medium">{product.name}</p>
+                <p className="text-small text-textSecondary">{product.sales} đã bán</p>
+              </div>
+            </div>
+            <p className="font-medium">{currency}{product.revenue.toLocaleString('vi-VN')}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  // Payment Methods Component
+  const PaymentMethods = ({ data }) => (
+    <Card title="Phương thức thanh toán">
+      <div className="grid grid-cols-2 gap-4">
+        {data.map((item, index) => (
+          <div key={index} className="text-center p-4 rounded-card bg-gray-10/50">
+            <div className="flex justify-center mb-3">
+              <div className="p-3 rounded-full bg-secondary/10">
+                <MdPayment className="text-secondary text-xl" />
+              </div>
+            </div>
+            <h4 className="text-body font-medium">{item.method}</h4>
+            <p className="text-small text-textSecondary">{item.count} đơn hàng</p>
+            <p className="text-h3 font-medium mt-2">{currency}{item.amount.toLocaleString('vi-VN')}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 
   return (
-    <div className="px-2 sm:px-8 mt-4 sm:mt-14 pb-8">
-      <h2 className="text-3xl font-bold mb-6">Bảng điều khiển phân tích</h2>
-      
-      {/* Date Range Selector */}
-      <div className="mb-6 flex space-x-2">
-        <button 
-          onClick={() => setDateRange('week')}
-          className={`px-4 py-2 rounded-full text-sm ${dateRange === 'week' ? 'bg-secondary text-white' : 'bg-white'}`}
-        >
-          Tuần này
-        </button>
-        <button 
-          onClick={() => setDateRange('month')}
-          className={`px-4 py-2 rounded-full text-sm ${dateRange === 'month' ? 'bg-secondary text-white' : 'bg-white'}`}
-        >
-          Tháng này
-        </button>
-        <button 
-          onClick={() => setDateRange('year')}
-          className={`px-4 py-2 rounded-full text-sm ${dateRange === 'year' ? 'bg-secondary text-white' : 'bg-white'}`}
-        >
-          Năm nay
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader 
+        title="Tổng quan" 
+        subtitle="Thống kê và phân tích hoạt động kinh doanh" 
+        actions={
+          <div className="flex bg-white p-1 rounded-button shadow-sm">
+            <button 
+              onClick={() => setDateRange('week')}
+              className={`px-4 py-2 text-small rounded-button transition-colors ${dateRange === 'week' ? 'bg-secondary text-white' : 'hover:bg-gray-10'}`}
+            >
+              Tuần
+            </button>
+            <button 
+              onClick={() => setDateRange('month')}
+              className={`px-4 py-2 text-small rounded-button transition-colors ${dateRange === 'month' ? 'bg-secondary text-white' : 'hover:bg-gray-10'}`}
+            >
+              Tháng
+            </button>
+            <button 
+              onClick={() => setDateRange('year')}
+              className={`px-4 py-2 text-small rounded-button transition-colors ${dateRange === 'year' ? 'bg-secondary text-white' : 'hover:bg-gray-10'}`}
+            >
+              Năm
+            </button>
+          </div>
+        }
+      />
       
       {isLoading ? (
         <div className="flex justify-center items-center h-96">
-          <div className="animate-pulse bg-secondary h-10 w-10 rounded-full"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent"></div>
         </div>
       ) : (
         <>
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard 
               title="Tổng doanh thu" 
               value={`${currency}${stats.totalRevenue.toLocaleString('vi-VN')}`}
-              icon={<IoStatsChart className="text-white text-xl" />}
-              color="bg-secondary"
+              icon={<IoStatsChart className="text-xl" />}
+              bgColor="bg-secondary/10"
+              textColor="text-secondary"
             />
             <StatCard 
               title="Tổng đơn hàng" 
               value={stats.totalOrders} 
-              icon={<TbTruckDelivery className="text-white text-xl" />}
-              color="bg-secondaryOne"
+              icon={<TbTruckDelivery className="text-xl" />}
+              bgColor="bg-info/10"
+              textColor="text-info"
             />
             <StatCard 
               title="Sản phẩm" 
               value={stats.totalProducts} 
-              icon={<BiBook className="text-white text-xl" />}
-              color="bg-green-500"
+              icon={<BiBook className="text-xl" />}
+              bgColor="bg-success/10"
+              textColor="text-success"
             />
             <StatCard 
               title="Khách hàng" 
               value={stats.totalCustomers} 
-              icon={<FiUsers className="text-white text-xl" />}
-              color="bg-blue-500"
+              icon={<FiUsers className="text-xl" />}
+              bgColor="bg-accent/10"
+              textColor="text-accent"
             />
           </div>
           
           {/* Charts Row 1 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="md:col-span-2">
-              <SalesChart data={stats.monthlySales} />
-            </div>
-            <div>
-              <BarChart data={stats.salesByCategory} title="Doanh số theo danh mục" />
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <SalesChart data={stats.monthlySales} className="lg:col-span-2" />
+            <BarChart data={stats.salesByCategory} title="Doanh số theo danh mục" />
           </div>
           
           {/* Charts Row 2 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <BarChart data={stats.orderStatusDistribution} title="Trạng thái đơn hàng" />
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold mb-4">Phương thức thanh toán</h3>
-              <div className="flex gap-8">
-                {stats.paymentMethodDistribution.map((item, index) => (
-                  <div key={index} className="text-center">
-                    <div className="flex justify-center mb-2">
-                      <div className="p-4 rounded-full bg-primary">
-                        <MdPayment className="text-secondary text-xl" />
-                      </div>
-                    </div>
-                    <h4 className="font-bold">{item.method}</h4>
-                    <p className="text-sm text-gray-500">{item.count} đơn hàng</p>
-                    <p className="font-medium">{currency}{item.amount.toLocaleString('vi-VN')}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <RecentOrders orders={stats.recentOrders} />
+            <BestSellers products={stats.bestSellers} />
           </div>
           
-          {/* Best Sellers & Recent Orders */}
+          {/* Charts Row 3 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold mb-4">Sản phẩm bán chạy</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Sản phẩm</th>
-                      <th className="text-right py-2">Đã bán</th>
-                      <th className="text-right py-2">Doanh thu</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.bestSellers.map((product, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="py-2">{product.name}</td>
-                        <td className="text-right py-2">{product.sales}</td>
-                        <td className="text-right py-2">{currency}{product.revenue.toLocaleString('vi-VN')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold mb-4">Đơn hàng gần đây</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2">Ngày</th>
-                      <th className="text-right py-2">Sản phẩm</th>
-                      <th className="text-right py-2">Tổng tiền</th>
-                      <th className="text-right py-2">Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.recentOrders.map((order, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="py-2">{new Date(order.date).toLocaleDateString()}</td>
-                        <td className="text-right py-2">{order.items}</td>
-                        <td className="text-right py-2">{currency}{order.amount.toLocaleString('vi-VN')}</td>
-                        <td className="text-right py-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'Đã giao hàng' ? 'bg-green-100 text-green-800' :
-                            order.status === 'Đã giao cho vận chuyển' ? 'bg-blue-100 text-blue-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {order.status === 'Đã giao hàng' ? 'Đã giao hàng' : 
-                             order.status === 'Đã giao cho vận chuyển' ? 'Đã giao cho vận chuyển' : 
-                             order.status === 'Đang xử lý' ? 'Đang xử lý' : order.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <BarChart data={stats.orderStatusDistribution} title="Trạng thái đơn hàng" />
+            <PaymentMethods data={stats.paymentMethodDistribution} />
           </div>
         </>
       )}
