@@ -15,6 +15,7 @@ const Users = ({ token }) => {
   const [currentUser, setCurrentUser] = useState(null)
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
   const [userIdToDelete, setUserIdToDelete] = useState(null)
+  const [userSpending, setUserSpending] = useState({})
 
   // Form state for editing
   const [formData, setFormData] = useState({
@@ -44,6 +45,7 @@ const Users = ({ token }) => {
         const usersData = response.data.users
         setUsers(usersData)
         setFilteredUsers(usersData)
+        fetchUserSpending(usersData)
       } else {
         toast.error(response.data.message)
       }
@@ -52,6 +54,37 @@ const Users = ({ token }) => {
       toast.error(error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Lấy tổng chi của từng người dùng
+  const fetchUserSpending = async (users) => {
+    try {
+      const userIds = users.map(user => user._id)
+      const response = await axios.post(
+        `${backend_url}/api/order/list`,
+        {},
+        { headers: { Authorization: token } }
+      )
+      
+      if (response.data.success) {
+        const orders = response.data.orders
+        
+        // Tính tổng chi tiêu cho mỗi người dùng từ các đơn hàng đã giao
+        const spending = {}
+        orders.forEach(order => {
+          if (order.status === "Đã giao hàng" && order.userId) {
+            if (!spending[order.userId]) {
+              spending[order.userId] = 0
+            }
+            spending[order.userId] += order.amount || 0
+          }
+        })
+        
+        setUserSpending(spending)
+      }
+    } catch (error) {
+      console.log(error)
     }
   }
 
@@ -181,6 +214,11 @@ const Users = ({ token }) => {
   const handleCancel = () => {
     setIsEditing(false)
     setCurrentUser(null)
+  }
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
   }
 
   return (
@@ -351,9 +389,9 @@ const Users = ({ token }) => {
               <thead>
                 <tr className="border-b border-gray-10">
                   <th className="px-4 py-3 text-left font-medium text-textSecondary">Người dùng</th>
-                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Liên hệ</th>
                   <th className="px-4 py-3 text-left font-medium text-textSecondary">Vai trò</th>
                   <th className="px-4 py-3 text-left font-medium text-textSecondary">Trạng thái</th>
+                  <th className="px-4 py-3 text-left font-medium text-textSecondary">Tổng chi</th>
                   <th className="px-4 py-3 text-right font-medium text-textSecondary">Thao tác</th>
                 </tr>
               </thead>
@@ -372,10 +410,6 @@ const Users = ({ token }) => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-small">{user.phone || '—'}</p>
-                      <p className="text-small text-textSecondary truncate max-w-[200px]">{user.address || '—'}</p>
-                    </td>
-                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {user.role === 'admin' ? (
                           <span className="px-3 py-1 rounded-full text-small bg-accent/10 text-accent flex items-center gap-1">
@@ -392,6 +426,11 @@ const Users = ({ token }) => {
                     <td className="px-4 py-3">
                       <span className={`px-3 py-1 rounded-full text-small ${user.active ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
                         {user.active ? 'Hoạt động' : 'Đã khóa'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-medium">
+                        {formatCurrency(userSpending[user._id] || 0)}
                       </span>
                     </td>
                     <td className="px-4 py-3">

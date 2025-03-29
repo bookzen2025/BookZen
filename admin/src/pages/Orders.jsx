@@ -14,6 +14,8 @@ const Orders = ({ token }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredOrders, setFilteredOrders] = useState([])
   const [statusFilter, setStatusFilter] = useState('all')
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [selectedOrderAction, setSelectedOrderAction] = useState(null)
 
   const statusOptions = [
     'Đã đặt hàng',
@@ -49,12 +51,25 @@ const Orders = ({ token }) => {
     }
   }
 
-  const statusHandler = async (event, orderId) => {
+  const statusHandler = async (event, orderId, order) => {
+    const newStatus = event.target.value
+    
+    // Nếu đang chuyển sang trạng thái "Đã giao hàng", hiển thị xác nhận
+    if (newStatus === 'Đã giao hàng') {
+      setSelectedOrderAction({
+        orderId,
+        status: newStatus,
+        currentPayment: order.payment
+      })
+      setShowConfirmDialog(true)
+      return
+    }
+    
     try {
       setLoading(true)
       const response = await axios.post(
         `${backend_url}/api/order/status`, 
-        { orderId, status: event.target.value }, 
+        { orderId, status: newStatus }, 
         { headers: { Authorization: token } }
       )
       
@@ -68,6 +83,55 @@ const Orders = ({ token }) => {
     } finally {
       setLoading(false)
     }
+  }
+  
+  const handleConfirmStatusChange = async () => {
+    if (!selectedOrderAction) return
+    
+    try {
+      setLoading(true)
+      
+      // Cập nhật trạng thái đơn hàng - thêm tham số payment vào API hiện có
+      const statusResponse = await axios.post(
+        `${backend_url}/api/order/status`, 
+        { 
+          orderId: selectedOrderAction.orderId, 
+          status: selectedOrderAction.status,
+          payment: true // Thêm trạng thái thanh toán vào cùng một API call
+        }, 
+        { headers: { Authorization: token } }
+      )
+      
+      // Không còn cần gọi API riêng về thanh toán - API này gây lỗi 404
+      // if (!selectedOrderAction.currentPayment) {
+      //   await axios.post(
+      //     `${backend_url}/api/order/payment`, 
+      //     { 
+      //       orderId: selectedOrderAction.orderId, 
+      //       payment: true 
+      //     }, 
+      //     { headers: { Authorization: token } }
+      //   )
+      // }
+      
+      if (statusResponse.data.success) {
+        toast.success('Cập nhật trạng thái thành công. Đơn hàng đã hoàn thành và không thể thay đổi trạng thái.')
+        await fetchAllOrders()
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+      setShowConfirmDialog(false)
+      setSelectedOrderAction(null)
+    }
+  }
+  
+  const handleCancelStatusChange = () => {
+    setShowConfirmDialog(false)
+    setSelectedOrderAction(null)
+    fetchAllOrders() // Làm mới dữ liệu để reset dropdown
   }
 
   useEffect(() => {
@@ -192,6 +256,30 @@ const Orders = ({ token }) => {
         ))}
       </div>
 
+      {/* Modal Xác nhận */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-card p-6 max-w-md w-full">
+            <h3 className="text-h3 font-heading mb-4">Xác nhận hoàn thành đơn hàng</h3>
+            <p className="mb-6">Khi xác nhận đơn hàng đã giao, trạng thái đơn hàng sẽ được khóa và không thể thay đổi. Đồng thời, trạng thái thanh toán sẽ chuyển sang "Đã thanh toán". Bạn có chắc chắn muốn tiếp tục?</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={handleCancelStatusChange}
+                className="px-4 py-2 border border-gray-10 rounded-button hover:bg-gray-10"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={handleConfirmStatusChange}
+                className="px-4 py-2 bg-success text-white rounded-button hover:bg-success/90"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center items-center h-60">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent"></div>
@@ -224,8 +312,12 @@ const Orders = ({ token }) => {
                       <span className={`px-3 py-1 rounded-full text-small ${getStatusColor(order.status)}`}>
                         {order.status}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-small ${order.payment ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
-                        {order.payment ? "Đã thanh toán" : "Chưa thanh toán"}
+                      <span className={`px-3 py-1 rounded-full text-small ${
+                        order.payment || order.status === 'Đã giao hàng' 
+                          ? 'bg-success/10 text-success' 
+                          : 'bg-error/10 text-error'
+                      }`}>
+                        {order.payment || order.status === 'Đã giao hàng' ? "Đã thanh toán" : "Chưa thanh toán"}
                       </span>
                     </div>
                   </div>
@@ -280,14 +372,20 @@ const Orders = ({ token }) => {
                     })}
                   </p>
                   <select 
-                    onChange={(event) => statusHandler(event, order._id)} 
+                    onChange={(event) => statusHandler(event, order._id, order)} 
                     value={order.status} 
-                    className="w-full px-3 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50 text-sm"
+                    disabled={order.status === 'Đã giao hàng'}
+                    className={`w-full px-3 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50 text-sm ${
+                      order.status === 'Đã giao hàng' ? 'opacity-60 cursor-not-allowed' : ''
+                    }`}
                   >
                     {statusOptions.map(status => (
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
+                  {order.status === 'Đã giao hàng' && (
+                    <p className="text-xs text-gray-20 italic">Đơn hàng đã hoàn thành và được khóa</p>
+                  )}
                 </div>
               </div>
             </Card>

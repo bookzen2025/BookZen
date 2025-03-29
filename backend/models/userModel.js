@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpires:{type:Date},
     refreshToken:{type:String},
     refreshTokenExpires:{type:Date},
+    active:{type:Boolean, default:true},
 }, {minimize:false})
 
 const userModel = mongoose.models.user || mongoose.model('user', userSchema)
