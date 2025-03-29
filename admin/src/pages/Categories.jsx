@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { backend_url } from "../App"
 import axios from "axios"
 import { toast } from "react-toastify"
-import { FaFolderOpen, FaEdit, FaTrash, FaPlus, FaSearch } from "react-icons/fa"
+import { FaFolderOpen, FaEdit, FaTrash, FaPlus, FaSearch, FaUpload, FaImage } from "react-icons/fa"
 import PageHeader from '../components/PageHeader'
 import Card from '../components/Card'
 
@@ -15,6 +15,9 @@ const Categories = ({ token }) => {
   const [categoryName, setCategoryName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCategories, setFilteredCategories] = useState([])
+  const [categoryImage, setCategoryImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState('')
+  const fileInputRef = useRef(null)
 
   const fetchCategories = async () => {
     try {
@@ -50,6 +53,19 @@ const Categories = ({ token }) => {
     }
   }, [searchTerm, categories])
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Kích thước hình ảnh không được vượt quá 2MB')
+      return
+    }
+
+    setCategoryImage(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   const addCategoryHandler = async (event) => {
     event.preventDefault()
     
@@ -60,15 +76,29 @@ const Categories = ({ token }) => {
 
     try {
       setLoading(true)
+      
+      const formData = new FormData()
+      formData.append('name', categoryName)
+      if (categoryImage) {
+        formData.append('image', categoryImage)
+      }
+      
       const response = await axios.post(
         `${backend_url}/api/category/create`, 
-        { name: categoryName }, 
-        { headers: { Authorization: token } }
+        formData, 
+        { 
+          headers: { 
+            Authorization: token,
+            'Content-Type': 'multipart/form-data'
+          } 
+        }
       )
       
       if (response.data.success) {
         toast.success('Thêm danh mục thành công')
         setCategoryName('')
+        setCategoryImage(null)
+        setImagePreview('')
         setIsAdding(false)
         await fetchCategories()
       } else {
@@ -92,15 +122,30 @@ const Categories = ({ token }) => {
 
     try {
       setLoading(true)
+      
+      const formData = new FormData()
+      formData.append('_id', editId)
+      formData.append('name', categoryName)
+      if (categoryImage) {
+        formData.append('image', categoryImage)
+      }
+      
       const response = await axios.put(
         `${backend_url}/api/category/update`, 
-        { _id: editId, name: categoryName }, 
-        { headers: { Authorization: token } }
+        formData, 
+        { 
+          headers: { 
+            Authorization: token,
+            'Content-Type': 'multipart/form-data'
+          } 
+        }
       )
       
       if (response.data.success) {
         toast.success('Cập nhật danh mục thành công')
         setCategoryName('')
+        setCategoryImage(null)
+        setImagePreview('')
         setIsEditing(false)
         setEditId(null)
         await fetchCategories()
@@ -120,6 +165,11 @@ const Categories = ({ token }) => {
     setEditId(category._id)
     setIsEditing(true)
     setIsAdding(false)
+    if (category.image) {
+      setImagePreview(`${backend_url}/${category.image}`)
+    } else {
+      setImagePreview('')
+    }
   }
 
   const handleDelete = async (id) => {
@@ -130,10 +180,9 @@ const Categories = ({ token }) => {
     try {
       setLoading(true)
       const response = await axios.delete(
-        `${backend_url}/api/category/delete`, 
+        `${backend_url}/api/category/${id}`, 
         { 
-          headers: { Authorization: token },
-          data: { _id: id }
+          headers: { Authorization: token }
         }
       )
       
@@ -153,6 +202,8 @@ const Categories = ({ token }) => {
 
   const handleAddNew = () => {
     setCategoryName('')
+    setCategoryImage(null)
+    setImagePreview('')
     setIsAdding(true)
     setIsEditing(false)
     setEditId(null)
@@ -160,6 +211,8 @@ const Categories = ({ token }) => {
 
   const handleCancel = () => {
     setCategoryName('')
+    setCategoryImage(null)
+    setImagePreview('')
     setIsAdding(false)
     setIsEditing(false)
     setEditId(null)
@@ -217,29 +270,73 @@ const Categories = ({ token }) => {
               <h3 className="text-body font-heading">Thêm danh mục mới</h3>
             </div>
             <div className="flex flex-col md:flex-row gap-4 mt-4">
-              <input
-                type="text"
-                placeholder="Tên danh mục"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-secondary text-white rounded-button hover:bg-secondary-dark transition-colors"
-                  disabled={loading}
+              <div className="w-full md:w-2/3 space-y-4">
+                <input
+                  type="text"
+                  placeholder="Tên danh mục"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                  autoFocus
+                />
+                <div className="relative border border-dashed border-gray-10 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-secondary/50 transition-colors"
+                  onClick={() => fileInputRef.current.click()}
                 >
-                  {loading ? 'Đang xử lý...' : 'Thêm danh mục'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
-                >
-                  Hủy
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                  />
+                  <FaUpload className="text-2xl text-gray-20 mb-2" />
+                  <p className="text-textSecondary">Nhấp để tải lên hình ảnh danh mục</p>
+                  <p className="text-xs text-gray-20 mt-1">PNG, JPG hoặc GIF (Tối đa 2MB)</p>
+                </div>
+              </div>
+              <div className="w-full md:w-1/3 flex flex-col">
+                <div className="flex-1 border border-gray-10 rounded-lg overflow-hidden">
+                  {imagePreview ? (
+                    <div className="relative h-full">
+                      <img 
+                        src={imagePreview} 
+                        alt="Hình ảnh xem trước" 
+                        className="w-full h-full object-contain" 
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCategoryImage(null);
+                          setImagePreview('');
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-error/70 text-white rounded-full hover:bg-error transition-colors"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center bg-gray-5 p-4">
+                      <FaImage className="text-4xl text-gray-20" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-secondary text-white rounded-button hover:bg-secondary-dark transition-colors"
+                    disabled={loading}
+                  >
+                    {loading ? 'Đang xử lý...' : 'Thêm danh mục'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                </div>
               </div>
             </div>
           </form>
@@ -257,29 +354,73 @@ const Categories = ({ token }) => {
               <h3 className="text-body font-heading">Chỉnh sửa danh mục</h3>
             </div>
             <div className="flex flex-col md:flex-row gap-4 mt-4">
-              <input
-                type="text"
-                placeholder="Tên danh mục"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-info text-white rounded-button hover:bg-info-dark transition-colors"
-                  disabled={loading}
+              <div className="w-full md:w-2/3 space-y-4">
+                <input
+                  type="text"
+                  placeholder="Tên danh mục"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                  autoFocus
+                />
+                <div className="relative border border-dashed border-gray-10 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-info/50 transition-colors"
+                  onClick={() => fileInputRef.current.click()}
                 >
-                  {loading ? 'Đang xử lý...' : 'Cập nhật'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
-                >
-                  Hủy
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                  />
+                  <FaUpload className="text-2xl text-gray-20 mb-2" />
+                  <p className="text-textSecondary">Nhấp để cập nhật hình ảnh danh mục</p>
+                  <p className="text-xs text-gray-20 mt-1">PNG, JPG hoặc GIF (Tối đa 2MB)</p>
+                </div>
+              </div>
+              <div className="w-full md:w-1/3 flex flex-col">
+                <div className="flex-1 border border-gray-10 rounded-lg overflow-hidden">
+                  {imagePreview ? (
+                    <div className="relative h-full">
+                      <img 
+                        src={imagePreview} 
+                        alt="Hình ảnh xem trước" 
+                        className="w-full h-full object-contain" 
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCategoryImage(null);
+                          setImagePreview('');
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-error/70 text-white rounded-full hover:bg-error transition-colors"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center bg-gray-5 p-4">
+                      <FaImage className="text-4xl text-gray-20" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-info text-white rounded-button hover:bg-info-dark transition-colors"
+                    disabled={loading}
+                  >
+                    {loading ? 'Đang xử lý...' : 'Cập nhật'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="px-4 py-2 bg-gray-10 text-textPrimary rounded-button hover:bg-gray-20 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                </div>
               </div>
             </div>
           </form>
@@ -314,9 +455,24 @@ const Categories = ({ token }) => {
                   <tr key={category._id} className="border-b border-gray-10 hover:bg-gray-5">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-secondary/10 rounded-full">
-                          <FaFolderOpen className="text-secondary" />
-                        </div>
+                        {category.image ? (
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-secondary/10 flex items-center justify-center">
+                            <img 
+                              src={`${backend_url}/${category.image}`} 
+                              alt={category.name}
+                              className="w-full h-full object-cover" 
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "";
+                                e.target.parentNode.innerHTML = '<div className="flex items-center justify-center w-full h-full"><FaFolderOpen className="text-secondary" /></div>';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-secondary/10 rounded-full">
+                            <FaFolderOpen className="text-secondary" />
+                          </div>
+                        )}
                         <span className="font-medium">{category.name}</span>
                       </div>
                     </td>
