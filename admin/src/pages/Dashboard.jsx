@@ -35,25 +35,13 @@ ChartJS.register(
 
 // Dữ liệu mẫu mặc định
 const defaultData = {
-  totalRevenue: 12580,
-  totalOrders: 124,
-  totalProducts: 45,
-  totalCustomers: 89,
-  averageOrderValue: 101.45,
-  recentOrders: [
-    { _id: 'ord1', date: Date.now() - 86400000, amount: 98, status: 'Đã giao hàng', items: 3, customer: 'Nguyễn Văn A' },
-    { _id: 'ord2', date: Date.now() - 172800000, amount: 145, status: 'Đã giao cho vận chuyển', items: 2, customer: 'Trần Thị B' },
-    { _id: 'ord3', date: Date.now() - 259200000, amount: 65, status: 'Đang xử lý', items: 1, customer: 'Lê Văn C' },
-    { _id: 'ord4', date: Date.now() - 345600000, amount: 120, status: 'Đã giao hàng', items: 4, customer: 'Phạm Thị D' },
-    { _id: 'ord5', date: Date.now() - 432000000, amount: 200, status: 'Đang đóng gói', items: 2, customer: 'Hoàng Văn E' },
-  ],
-  bestSellers: [
-    { _id: 'prod1', name: 'Đắc Nhân Tâm', sales: 15, revenue: 450, rating: 4.8 },
-    { _id: 'prod2', name: 'Nhà Giả Kim', sales: 12, revenue: 360, rating: 4.7 },
-    { _id: 'prod3', name: 'Tư Duy Phản Biện', sales: 10, revenue: 300, rating: 4.5 },
-    { _id: 'prod4', name: 'Đọc Vị Bất Kỳ Ai', sales: 8, revenue: 240, rating: 4.6 },
-    { _id: 'prod5', name: 'Người Giàu Có Nhất Thành Babylon', sales: 7, revenue: 210, rating: 4.4 },
-  ],
+  totalRevenue: 0,
+  totalOrders: 0,
+  totalProducts: 0,
+  totalCustomers: 0,
+  averageOrderValue: 0,
+  recentOrders: [],
+  bestSellers: [],
   salesByCategory: [
     { category: 'Văn học', sales: 45, percentage: 50, color: 'rgba(99, 102, 241, 0.8)' },
     { category: 'Thiếu nhi', sales: 20, percentage: 22, color: 'rgba(14, 165, 233, 0.8)' },
@@ -72,27 +60,27 @@ const defaultData = {
     { method: 'COD', count: 39, amount: 3930, color: 'rgba(52, 211, 153, 0.8)' },
   ],
   monthlySales: [
-    { month: 'T1', sales: 3200, customers: 45 },
-    { month: 'T2', sales: 3800, customers: 52 },
-    { month: 'T3', sales: 2800, customers: 40 },
-    { month: 'T4', sales: 4200, customers: 60 },
-    { month: 'T5', sales: 5100, customers: 72 },
-    { month: 'T6', sales: 4800, customers: 65 },
-    { month: 'T7', sales: 6200, customers: 80 },
-    { month: 'T8', sales: 5800, customers: 75 },
-    { month: 'T9', sales: 7100, customers: 95 },
-    { month: 'T10', sales: 6500, customers: 85 },
-    { month: 'T11', sales: 8200, customers: 105 },
-    { month: 'T12', sales: 9500, customers: 120 },
+    { month: 'T1', sales: 0, customers: 0 },
+    { month: 'T2', sales: 0, customers: 0 },
+    { month: 'T3', sales: 0, customers: 0 },
+    { month: 'T4', sales: 0, customers: 0 },
+    { month: 'T5', sales: 0, customers: 0 },
+    { month: 'T6', sales: 0, customers: 0 },
+    { month: 'T7', sales: 0, customers: 0 },
+    { month: 'T8', sales: 0, customers: 0 },
+    { month: 'T9', sales: 0, customers: 0 },
+    { month: 'T10', sales: 0, customers: 0 },
+    { month: 'T11', sales: 0, customers: 0 },
+    { month: 'T12', sales: 0, customers: 0 },
   ],
   dailyActivities: [
-    { day: 'T2', orders: 15, pageviews: 250 },
-    { day: 'T3', orders: 20, pageviews: 300 },
-    { day: 'T4', orders: 18, pageviews: 280 },
-    { day: 'T5', orders: 25, pageviews: 350 },
-    { day: 'T6', orders: 30, pageviews: 400 },
-    { day: 'T7', orders: 22, pageviews: 320 },
-    { day: 'CN', orders: 17, pageviews: 290 },
+    { day: 'T2', orders: 0, pageviews: 0 },
+    { day: 'T3', orders: 0, pageviews: 0 },
+    { day: 'T4', orders: 0, pageviews: 0 },
+    { day: 'T5', orders: 0, pageviews: 0 },
+    { day: 'T6', orders: 0, pageviews: 0 },
+    { day: 'T7', orders: 0, pageviews: 0 },
+    { day: 'CN', orders: 0, pageviews: 0 },
   ]
 };
 
@@ -117,14 +105,14 @@ const Dashboard = ({ token }) => {
     console.log("Dashboard useEffect triggered");
     console.log("Current token value:", token);
     
-    // Chỉ fetch data khi đã có token
+    // Luôn fetch data từ API nếu có token
     if (token) {
       console.log("Token exists, calling fetchDashboardData");
       fetchDashboardData();
     } else {
-      console.log("No token, using mock data");
-      // Dữ liệu mẫu khi không có token (cho phép trình duyệt hiển thị trang mà không bị lỗi)
-      setMockData();
+      console.log("No token, using empty data");
+      // Sử dụng dữ liệu trống khi không có token
+      setEmptyData();
     }
     
     // Thêm hiệu ứng scroll với một thời gian chờ để đảm bảo DOM đã render
@@ -175,25 +163,48 @@ const Dashboard = ({ token }) => {
       if (response.data.success) {
         console.log("Data fetched successfully:", response.data.stats);
         
-        // Kết hợp dữ liệu từ API với dữ liệu mẫu cho các trường thiếu
+        // Lấy dữ liệu từ API
         const apiStats = response.data.stats || {};
         
-        // Tạo đối tượng stats mới với dữ liệu từ API hoặc sử dụng dữ liệu mẫu nếu thiếu
-        const combinedStats = {
-          totalRevenue: apiStats.totalRevenue || defaultData.totalRevenue,
-          totalOrders: apiStats.totalOrders || defaultData.totalOrders,
-          totalProducts: apiStats.totalProducts || defaultData.totalProducts,
-          totalCustomers: apiStats.totalCustomers || defaultData.totalCustomers,
-          averageOrderValue: apiStats.averageOrderValue || defaultData.averageOrderValue,
+        // Thêm màu sắc cho biểu đồ nếu không có từ API
+        if (apiStats.salesByCategory && Array.isArray(apiStats.salesByCategory)) {
+          const colors = [
+            'rgba(99, 102, 241, 0.8)', // Tím
+            'rgba(14, 165, 233, 0.8)', // Xanh dương
+            'rgba(52, 211, 153, 0.8)', // Xanh lá
+            'rgba(249, 115, 22, 0.8)', // Cam
+            'rgba(236, 72, 153, 0.8)', // Hồng
+            'rgba(168, 85, 247, 0.8)', // Tím nhạt
+            'rgba(251, 191, 36, 0.8)', // Vàng
+            'rgba(239, 68, 68, 0.8)'   // Đỏ
+          ];
           
-          // Sử dụng dữ liệu từ API nếu có, nếu không dùng dữ liệu mẫu
-          recentOrders: apiStats.recentOrders || defaultData.recentOrders,
-          bestSellers: apiStats.bestSellers || defaultData.bestSellers,
-          salesByCategory: apiStats.salesByCategory || defaultData.salesByCategory,
-          orderStatusDistribution: apiStats.orderStatusDistribution || defaultData.orderStatusDistribution,
-          paymentMethodDistribution: apiStats.paymentMethodDistribution || defaultData.paymentMethodDistribution,
-          monthlySales: apiStats.monthlySales || defaultData.monthlySales,
-          dailyActivities: apiStats.dailyActivities || defaultData.dailyActivities
+          apiStats.salesByCategory = apiStats.salesByCategory.map((category, index) => ({
+            ...category,
+            color: colors[index % colors.length]
+          }));
+        }
+        
+        // Thêm màu sắc cho trạng thái đơn hàng nếu không có từ API
+        if (apiStats.orderStatusDistribution && Array.isArray(apiStats.orderStatusDistribution)) {
+          const colors = [
+            'rgba(99, 102, 241, 0.8)', // Tím
+            'rgba(14, 165, 233, 0.8)', // Xanh dương
+            'rgba(52, 211, 153, 0.8)', // Xanh lá
+            'rgba(249, 115, 22, 0.8)', // Cam
+            'rgba(236, 72, 153, 0.8)', // Hồng
+          ];
+          
+          apiStats.orderStatusDistribution = apiStats.orderStatusDistribution.map((status, index) => ({
+            ...status,
+            color: colors[index % colors.length]
+          }));
+        }
+        
+        // Tạo đối tượng stats mới với dữ liệu từ API hoặc sử dụng dữ liệu trống nếu thiếu
+        const combinedStats = {
+          ...defaultData,
+          ...apiStats
         };
         
         console.log("Combined stats:", combinedStats);
@@ -201,13 +212,18 @@ const Dashboard = ({ token }) => {
         // Cập nhật state với dữ liệu đã kết hợp
         setStats(combinedStats);
         
-        // Set comparison stats (bình thường sẽ từ API)
-        setComparisonStats({
-          revenue: { value: combinedStats.totalRevenue, percentage: 12.5, trend: 'up' },
-          orders: { value: combinedStats.totalOrders, percentage: 8.2, trend: 'up' },
-          customers: { value: combinedStats.totalCustomers, percentage: 5.1, trend: 'up' },
-          aov: { value: combinedStats.averageOrderValue, percentage: 2.3, trend: 'down' }
-        });
+        // Set comparison stats từ API nếu có
+        if (apiStats.comparisonStats) {
+          setComparisonStats(apiStats.comparisonStats);
+        } else {
+          // Nếu không có từ API, dùng giá trị mặc định
+          setComparisonStats({
+            revenue: { value: combinedStats.totalRevenue, percentage: 12.5, trend: 'up' },
+            orders: { value: combinedStats.totalOrders, percentage: 8.2, trend: 'up' },
+            customers: { value: combinedStats.totalCustomers, percentage: 5.1, trend: 'up' },
+            aov: { value: combinedStats.averageOrderValue, percentage: 2.3, trend: 'down' }
+          });
+        }
       } else {
         console.error('API response indicates failure:', response.data.message);
         setError(response.data.message || 'Lỗi khi tải dữ liệu Dashboard');
@@ -216,32 +232,28 @@ const Dashboard = ({ token }) => {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message || 'Lỗi kết nối đến máy chủ');
-      toast.error('Error fetching dashboard data');
+      toast.error('Lỗi khi tải dữ liệu: ' + error.message);
     } finally {
       setIsLoading(false);
       console.log("Loading state set to false");
-      // Kiểm tra giá trị state sau khi cập nhật
-      console.log("Current stats after fetch:", stats);
-      console.log("Current isLoading state:", isLoading);
     }
   };
 
-  // Tạo dữ liệu mẫu để tránh lỗi undefined
-  const setMockData = () => {
-    console.log("Setting mock data...");
+  // Tạo dữ liệu trống để tránh lỗi undefined
+  const setEmptyData = () => {
+    console.log("Setting empty data...");
     setStats(defaultData);
     
     // Set comparison stats
     setComparisonStats({
-      revenue: { value: defaultData.totalRevenue, percentage: 12.5, trend: 'up' },
-      orders: { value: defaultData.totalOrders, percentage: 8.2, trend: 'up' },
-      customers: { value: defaultData.totalCustomers, percentage: 5.1, trend: 'up' },
-      aov: { value: defaultData.averageOrderValue, percentage: 2.3, trend: 'down' }
+      revenue: { value: 0, percentage: 0, trend: 'up' },
+      orders: { value: 0, percentage: 0, trend: 'up' },
+      customers: { value: 0, percentage: 0, trend: 'up' },
+      aov: { value: 0, percentage: 0, trend: 'up' }
     });
     
     setIsLoading(false);
-    console.log("Mock data set, isLoading set to false");
-    console.log("Current stats after mock:", stats);
+    console.log("Empty data set, isLoading set to false");
   };
 
   // Chart Config for Sales
@@ -384,7 +396,8 @@ const Dashboard = ({ token }) => {
       {
         data: stats.salesByCategory?.map(item => item.sales) || [],
         backgroundColor: stats.salesByCategory?.map(item => item.color) || [],
-        borderWidth: 0,
+        borderWidth: 1,
+        borderColor: '#ffffff',
         borderRadius: 4,
         hoverOffset: 15,
       }
@@ -403,7 +416,8 @@ const Dashboard = ({ token }) => {
           font: {
             family: "'Inter', sans-serif",
             size: 12
-          }
+          },
+          color: '#333333'
         }
       },
       tooltip: {
@@ -422,7 +436,7 @@ const Dashboard = ({ token }) => {
             if (context.parsed !== null && context.dataset.data && context.dataset.data.length > 0) {
               const totalSales = Array.isArray(stats.salesByCategory) ? 
                 stats.salesByCategory.reduce((a, b) => a + (b.sales || 0), 0) || 1 : 1;
-              const percentage = ((context.dataset.data[context.dataIndex] / totalSales) * 100).toFixed(1);
+              const percentage = ((context.parsed / totalSales) * 100).toFixed(1);
               label += context.parsed + ' đã bán (' + percentage + '%)';
             }
             return label;
@@ -444,7 +458,8 @@ const Dashboard = ({ token }) => {
       {
         data: stats.orderStatusDistribution?.map(item => item.count) || [],
         backgroundColor: stats.orderStatusDistribution?.map(item => item.color) || [],
-        borderWidth: 0,
+        borderWidth: 1,
+        borderColor: '#ffffff',
       }
     ]
   };
@@ -461,7 +476,8 @@ const Dashboard = ({ token }) => {
           font: {
             family: "'Inter', sans-serif",
             size: 12
-          }
+          },
+          color: '#333333'
         }
       },
       tooltip: {
