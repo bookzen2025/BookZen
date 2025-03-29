@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import ReactDOM from 'react-dom'
 import { backend_url } from "../App"
 import axios from "axios"
 import { toast } from "react-toastify"
@@ -22,16 +23,18 @@ const Categories = ({ token }) => {
   const fetchCategories = async () => {
     try {
       setLoading(true)
+      console.log("Fetching categories...")
       const response = await axios.get(`${backend_url}/api/category/list`)
       
       if (response.data.success) {
+        console.log("Categories fetched successfully:", response.data.categories)
         setCategories(response.data.categories)
         setFilteredCategories(response.data.categories)
       } else {
         toast.error(response.data.message)
       }
     } catch (error) {
-      console.log(error)
+      console.log("Error fetching categories:", error)
       toast.error(error.message)
     } finally {
       setLoading(false)
@@ -53,6 +56,16 @@ const Categories = ({ token }) => {
     }
   }, [searchTerm, categories])
 
+  // Xử lý rò rỉ bộ nhớ
+  useEffect(() => {
+    return () => {
+      // Dọn dẹp URL khi unmount component
+      if (imagePreview && !imagePreview.startsWith(backend_url)) {
+        URL.revokeObjectURL(imagePreview)
+      }
+    }
+  }, [imagePreview, backend_url])
+
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -60,6 +73,11 @@ const Categories = ({ token }) => {
     if (file.size > 2 * 1024 * 1024) {
       toast.error('Kích thước hình ảnh không được vượt quá 2MB')
       return
+    }
+
+    // Dọn dẹp URL cũ trước khi tạo mới
+    if (imagePreview && !imagePreview.startsWith(backend_url)) {
+      URL.revokeObjectURL(imagePreview)
     }
 
     setCategoryImage(file)
@@ -83,6 +101,9 @@ const Categories = ({ token }) => {
         formData.append('image', categoryImage)
       }
       
+      console.log("Adding category with name:", categoryName)
+      console.log("Has image:", categoryImage !== null)
+      
       const response = await axios.post(
         `${backend_url}/api/category/create`, 
         formData, 
@@ -96,6 +117,10 @@ const Categories = ({ token }) => {
       
       if (response.data.success) {
         toast.success('Thêm danh mục thành công')
+        // Dọn dẹp URL khi không còn sử dụng nữa
+        if (imagePreview && !imagePreview.startsWith(backend_url)) {
+          URL.revokeObjectURL(imagePreview)
+        }
         setCategoryName('')
         setCategoryImage(null)
         setImagePreview('')
@@ -105,7 +130,7 @@ const Categories = ({ token }) => {
         toast.error(response.data.message)
       }
     } catch (error) {
-      console.log(error)
+      console.log("Error adding category:", error)
       toast.error(error.message)
     } finally {
       setLoading(false)
@@ -124,13 +149,17 @@ const Categories = ({ token }) => {
       setLoading(true)
       
       const formData = new FormData()
-      formData.append('_id', editId)
+      formData.append('id', editId)
       formData.append('name', categoryName)
       if (categoryImage) {
         formData.append('image', categoryImage)
       }
       
-      const response = await axios.put(
+      console.log("Editing category with ID:", editId)
+      console.log("New name:", categoryName)
+      console.log("Has new image:", categoryImage !== null)
+      
+      const response = await axios.post(
         `${backend_url}/api/category/update`, 
         formData, 
         { 
@@ -143,6 +172,10 @@ const Categories = ({ token }) => {
       
       if (response.data.success) {
         toast.success('Cập nhật danh mục thành công')
+        // Dọn dẹp URL khi không còn sử dụng nữa
+        if (imagePreview && !imagePreview.startsWith(backend_url)) {
+          URL.revokeObjectURL(imagePreview)
+        }
         setCategoryName('')
         setCategoryImage(null)
         setImagePreview('')
@@ -153,7 +186,7 @@ const Categories = ({ token }) => {
         toast.error(response.data.message)
       }
     } catch (error) {
-      console.log(error)
+      console.log("Error updating category:", error)
       toast.error(error.message)
     } finally {
       setLoading(false)
@@ -161,12 +194,16 @@ const Categories = ({ token }) => {
   }
 
   const handleEdit = (category) => {
+    // Dọn dẹp URL trước khi gán URL mới
+    if (imagePreview && !imagePreview.startsWith(backend_url)) {
+      URL.revokeObjectURL(imagePreview)
+    }
     setCategoryName(category.name)
     setEditId(category._id)
     setIsEditing(true)
     setIsAdding(false)
     if (category.image) {
-      setImagePreview(`${backend_url}/${category.image}`)
+      setImagePreview(`${backend_url}${category.image}`)
     } else {
       setImagePreview('')
     }
@@ -179,28 +216,35 @@ const Categories = ({ token }) => {
 
     try {
       setLoading(true)
-      const response = await axios.delete(
-        `${backend_url}/api/category/${id}`, 
-        { 
-          headers: { Authorization: token }
-        }
+      console.log("Deleting category with ID:", id)
+      
+      const response = await axios.post(
+        `${backend_url}/api/category/delete`, 
+        { id: id },
+        { headers: { Authorization: token } }
       )
+      
+      console.log("Delete response:", response.data)
       
       if (response.data.success) {
         toast.success('Xóa danh mục thành công')
         await fetchCategories()
       } else {
-        toast.error(response.data.message)
+        toast.error(response.data.message || 'Không thể xóa danh mục')
       }
     } catch (error) {
-      console.log(error)
-      toast.error(error.message)
+      console.log("Error deleting category:", error)
+      toast.error(error.message || 'Đã xảy ra lỗi khi xóa danh mục')
     } finally {
       setLoading(false)
     }
   }
 
   const handleAddNew = () => {
+    // Dọn dẹp URL trước khi reset state
+    if (imagePreview && !imagePreview.startsWith(backend_url)) {
+      URL.revokeObjectURL(imagePreview)
+    }
     setCategoryName('')
     setCategoryImage(null)
     setImagePreview('')
@@ -210,6 +254,10 @@ const Categories = ({ token }) => {
   }
 
   const handleCancel = () => {
+    // Dọn dẹp URL trước khi reset state
+    if (imagePreview && !imagePreview.startsWith(backend_url)) {
+      URL.revokeObjectURL(imagePreview)
+    }
     setCategoryName('')
     setCategoryImage(null)
     setImagePreview('')
@@ -221,6 +269,24 @@ const Categories = ({ token }) => {
   useEffect(() => {
     fetchCategories()
   }, [token])
+
+  // Cách tiếp cận tối giản hơn, không sử dụng ReactDOM.render vì có thể
+  // gây vấn đề hiệu suất và không tương thích với React 18+
+  const renderFallbackIcon = () => (
+    <div className="p-2 bg-secondary/10 rounded-full">
+      <FaFolderOpen className="text-secondary" />
+    </div>
+  )
+  
+  const removeImage = (e) => {
+    e.stopPropagation()
+    // Dọn dẹp URL khi xóa hình ảnh
+    if (imagePreview && !imagePreview.startsWith(backend_url)) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setCategoryImage(null)
+    setImagePreview('')
+  }
 
   return (
     <div className="space-y-6">
@@ -305,11 +371,7 @@ const Categories = ({ token }) => {
                       />
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCategoryImage(null);
-                          setImagePreview('');
-                        }}
+                        onClick={removeImage}
                         className="absolute top-2 right-2 p-1 bg-error/70 text-white rounded-full hover:bg-error transition-colors"
                       >
                         <FaTrash size={12} />
@@ -389,11 +451,7 @@ const Categories = ({ token }) => {
                       />
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCategoryImage(null);
-                          setImagePreview('');
-                        }}
+                        onClick={removeImage}
                         className="absolute top-2 right-2 p-1 bg-error/70 text-white rounded-full hover:bg-error transition-colors"
                       >
                         <FaTrash size={12} />
@@ -457,21 +515,27 @@ const Categories = ({ token }) => {
                       <div className="flex items-center gap-3">
                         {category.image ? (
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-secondary/10 flex items-center justify-center">
+                            {/* Sử dụng onError inline để xử lý lỗi hình ảnh */}
                             <img 
-                              src={`${backend_url}/${category.image}`} 
+                              src={`${backend_url}${category.image}`} 
                               alt={category.name}
                               className="w-full h-full object-cover" 
                               onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "";
-                                e.target.parentNode.innerHTML = '<div className="flex items-center justify-center w-full h-full"><FaFolderOpen className="text-secondary" /></div>';
+                                // Ẩn hình ảnh lỗi và hiển thị fallback icon
+                                e.target.style.display = 'none';
+                                e.target.parentNode.classList.add('fallback-active');
+                                // Nếu chưa có icon fallback, thêm vào
+                                if (!e.target.parentNode.querySelector('.fallback-icon')) {
+                                  const iconWrapper = document.createElement('div');
+                                  iconWrapper.className = 'w-full h-full flex items-center justify-center fallback-icon';
+                                  iconWrapper.innerHTML = '<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" class="text-secondary" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M464 128H272l-64-64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48z"></path></svg>';
+                                  e.target.parentNode.appendChild(iconWrapper);
+                                }
                               }}
                             />
                           </div>
                         ) : (
-                          <div className="p-2 bg-secondary/10 rounded-full">
-                            <FaFolderOpen className="text-secondary" />
-                          </div>
+                          renderFallbackIcon()
                         )}
                         <span className="font-medium">{category.name}</span>
                       </div>
