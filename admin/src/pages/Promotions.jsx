@@ -1,12 +1,12 @@
 // Trang Quản lý Khuyến mãi
 // Tạo mới: 2024
-// Mô tả: Giao diện quản lý các chương trình khuyến mãi, bao gồm danh sách, thêm, sửa, xóa
+// Mô tả: Giao diện quản lý các chương trình khuyến mãi, bao gồm danh sách, thêm, sửa, xóa. Thêm log chi tiết trong handleSubmit để gỡ lỗi.
 
 import React, { useState, useEffect } from 'react'
 import axios from "axios"
 import { backend_url, currency } from '../App'
 import { toast } from 'react-toastify'
-import { FaTag, FaEdit, FaTrash, FaPlus, FaSearch, FaCalendarAlt } from "react-icons/fa"
+import { FaTag, FaEdit, FaTrash, FaPlus, FaSearch, FaCalendarAlt, FaCheck } from "react-icons/fa"
 import PageHeader from '../components/PageHeader'
 import Card from '../components/Card'
 import StatCard from '../components/StatCard'
@@ -46,6 +46,10 @@ const Promotions = ({ token }) => {
     upcomingPromotions: 0,
     totalPromotions: 0
   })
+
+  // State cho tính năng tìm kiếm sản phẩm
+  const [productSearchTerm, setProductSearchTerm] = useState('')
+  const [filteredProducts, setFilteredProducts] = useState([])
 
   const fetchPromotions = async () => {
     if (!token) return null
@@ -108,8 +112,12 @@ const Promotions = ({ token }) => {
   }
 
   useEffect(() => {
-    fetchPromotions()
-    fetchProducts()
+    if (token) {
+      fetchPromotions()
+      fetchProducts()
+    } else {
+      toast.error("Vui lòng đăng nhập để quản lý khuyến mãi")
+    }
   }, [token])
 
   // Lọc khuyến mãi khi searchTerm thay đổi
@@ -128,6 +136,20 @@ const Promotions = ({ token }) => {
       setFilteredPromotions(promotions)
     }
   }, [searchTerm, promotions])
+
+  useEffect(() => {
+    if (!products.length) return
+
+    if (productSearchTerm) {
+      const term = productSearchTerm.toLowerCase()
+      const filtered = products.filter(product => 
+        product.name.toLowerCase().includes(term)
+      )
+      setFilteredProducts(filtered)
+    } else {
+      setFilteredProducts(products)
+    }
+  }, [productSearchTerm, products])
 
   const handleCreate = () => {
     setFormData({
@@ -197,7 +219,12 @@ const Promotions = ({ token }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Validate form
+    // Validate form và token
+    if (!token) {
+      toast.error('Vui lòng đăng nhập lại để tiếp tục')
+      return
+    }
+    
     if (!formData.name || !formData.code || !formData.discountValue || !formData.validFrom || !formData.validTo) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
       return
@@ -206,20 +233,45 @@ const Promotions = ({ token }) => {
     try {
       setLoading(true)
       
-      const payload = { ...formData }
+      // Chuyển đổi các giá trị chuỗi sang kiểu số trước khi gửi
+      const payload = {
+        name: formData.name.trim(),
+        code: formData.code.trim(),
+        description: formData.description || "",
+        discountType: formData.discountType,
+        discountValue: Number(formData.discountValue),
+        minOrderValue: formData.minAmount ? Number(formData.minAmount) : 0, 
+        maxDiscountAmount: formData.maxAmount ? Number(formData.maxAmount) : undefined, 
+        startDate: formData.validFrom, 
+        endDate: formData.validTo,     
+        usageLimit: formData.usageLimit ? Number(formData.usageLimit) : undefined, 
+        isActive: Boolean(formData.isActive),
+        applicableProducts: formData.applicableProducts.length ? formData.applicableProducts : []
+      }
+      
       let response
       
       if (isEditing) {
         response = await axios.put(
           `${backend_url}/api/promotion/update/${currentPromotion._id}`, 
           payload,
-          { headers: { Authorization: token } }
+          { 
+            headers: { 
+              'Authorization': token,
+              'Content-Type': 'application/json' 
+            } 
+          }
         )
       } else {
         response = await axios.post(
           `${backend_url}/api/promotion/create`,
           payload,
-          { headers: { Authorization: token } }
+          { 
+            headers: { 
+              'Authorization': token,
+              'Content-Type': 'application/json' 
+            } 
+          }
         )
       }
 
@@ -233,8 +285,13 @@ const Promotions = ({ token }) => {
         toast.error(response.data.message)
       }
     } catch (error) {
-      console.log(error)
-      toast.error(error.message)
+      if (error.response) {
+        toast.error(error.response.data.message || 'Đã xảy ra lỗi khi gửi yêu cầu')
+      } else if (error.request) {
+        toast.error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+      } else {
+        toast.error(error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -262,12 +319,28 @@ const Promotions = ({ token }) => {
     }
   }
 
-  const handleProductSelect = (e) => {
-    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
-    setFormData(prev => ({
-      ...prev,
-      applicableProducts: selectedOptions
-    }))
+  const handleProductSelect = (productId) => {
+    setFormData(prev => {
+      const currentProducts = [...prev.applicableProducts]
+      const index = currentProducts.indexOf(productId)
+      
+      if (index > -1) {
+        // Nếu sản phẩm đã được chọn, bỏ chọn
+        currentProducts.splice(index, 1)
+      } else {
+        // Nếu sản phẩm chưa được chọn, thêm vào
+        currentProducts.push(productId)
+      }
+      
+      return {
+        ...prev,
+        applicableProducts: currentProducts
+      }
+    })
+  }
+
+  const isProductSelected = (productId) => {
+    return formData.applicableProducts.includes(productId)
   }
 
   // Hàm hỗ trợ định dạng ngày tháng
@@ -516,22 +589,94 @@ const Promotions = ({ token }) => {
                 </div>
                 
               <div className="md:col-span-2">
-                <label className="block text-textSecondary text-small mb-1">Áp dụng cho sản phẩm (giữ Ctrl để chọn nhiều)</label>
-                <select
-                  name="applicableProducts"
-                  multiple
-                  value={formData.applicableProducts}
-                  onChange={handleProductSelect}
-                  className="w-full px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50 h-32"
-                >
-                  {products.map(product => (
-                    <option key={product._id} value={product._id}>
-                      {product.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-small text-textSecondary mt-1">Để trống nếu áp dụng cho tất cả sản phẩm</p>
+                <label className="block text-textSecondary text-small mb-1">Áp dụng cho sản phẩm</label>
+                
+                <div className="border border-gray-10 rounded-button p-4 max-h-[320px] overflow-y-auto">
+                  <div className="mb-3 relative">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm sản phẩm..."
+                      value={productSearchTerm}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
+                    />
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-20" />
+                  </div>
+                  
+                  {formData.applicableProducts.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-textSecondary text-small mb-2">Sản phẩm đã chọn ({formData.applicableProducts.length})</p>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.applicableProducts.map(productId => {
+                          const product = products.find(p => p._id === productId)
+                          return product ? (
+                            <div 
+                              key={product._id} 
+                              className="flex items-center bg-secondary/10 text-secondary rounded-full px-3 py-1"
+                            >
+                              <span className="text-small">{product.name}</span>
+                              <button 
+                                type="button"
+                                onClick={() => handleProductSelect(product._id)}
+                                className="ml-2 text-secondary hover:text-error transition-colors"
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {filteredProducts.map(product => (
+                      <div 
+                        key={product._id} 
+                        className={`
+                          flex items-center p-2 border rounded-lg cursor-pointer 
+                          ${isProductSelected(product._id) 
+                            ? 'border-secondary bg-secondary/5' 
+                            : 'border-gray-10 hover:border-secondary/50'}
+                        `}
+                        onClick={() => handleProductSelect(product._id)}
+                      >
+                        <div className={`
+                          flex items-center justify-center w-5 h-5 rounded-sm mr-2
+                          ${isProductSelected(product._id) 
+                            ? 'bg-secondary text-white' 
+                            : 'border border-gray-20'}
+                        `}>
+                          {isProductSelected(product._id) && <FaCheck className="text-xs" />}
+                        </div>
+                        <span className="text-small truncate">{product.name}</span>
+                      </div>
+                    ))}
+                    
+                    {filteredProducts.length === 0 && (
+                      <p className="text-textSecondary col-span-full text-center py-4">
+                        {productSearchTerm 
+                          ? 'Không tìm thấy sản phẩm phù hợp.' 
+                          : 'Không có sản phẩm nào.'}
+                      </p>
+                    )}
+                  </div>
                 </div>
+                
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-small text-textSecondary">Để trống nếu áp dụng cho tất cả sản phẩm</p>
+                  
+                  {formData.applicableProducts.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({...prev, applicableProducts: []}))}
+                      className="text-small text-error hover:underline"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                  )}
+                </div>
+              </div>
                 
                 <div className="md:col-span-2">
                 <label className="flex items-center">

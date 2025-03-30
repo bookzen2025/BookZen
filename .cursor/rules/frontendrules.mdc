@@ -1,0 +1,7 @@
+---
+description: 
+globs: *.jsx, *.tsx, *.js, *.ts,**/components/**/*.*, **/pages/**/*.*, **/views/**/*.*, **/src/**/*.css
+alwaysApply: false
+---
+Always use Tailwind for styling.
+Components should be modular and reusable.
