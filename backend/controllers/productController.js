@@ -19,15 +19,17 @@ const createProduct = async (req, res) => {
             publisher = "",
             publishedYear = "",
             pages = "",
-            stock = 0
+            stock = 0,
+            sku = ""
         } = req.body;
 
         console.log("Extracted fields:", {
             name, description, category, price, popular, newArrivals,
-            author, publisher, publishedYear, pages, stock
+            author, publisher, publishedYear, pages, stock, sku
         });
 
         let imageUrl = "https://via.placeholder.com/150"; // Default image URL
+        let images = [];
 
         // Only upload the image if one is provided
         if (req.file) {
@@ -35,6 +37,7 @@ const createProduct = async (req, res) => {
                 console.log("Attempting to upload file:", req.file.path);
                 const uploadResult = await cloudinary.uploader.upload(req.file.path, { resource_type: "image" });
                 imageUrl = uploadResult.secure_url;
+                images.push(uploadResult.secure_url);
                 console.log("Image uploaded successfully:", imageUrl);
             } catch (uploadError) {
                 console.error("Image upload error:", uploadError);
@@ -48,7 +51,7 @@ const createProduct = async (req, res) => {
         const productData = {
             name: String(name),
             description: String(description),
-            category: String(category),
+            category: category, // Sử dụng trực tiếp ObjectId
             price: Number(price) || 0,
             popular: popular === "true" || popular === true,
             newArrivals: newArrivals === "true" || newArrivals === true,
@@ -57,7 +60,9 @@ const createProduct = async (req, res) => {
             publishedYear: publishedYear ? Number(publishedYear) : null,
             pages: pages ? Number(pages) : null,
             stock: Number(stock) || 0,
+            sku: String(sku || ""),
             image: imageUrl,
+            images: images.length > 0 ? images : [imageUrl],
             date: Date.now()
         };
 
@@ -214,21 +219,25 @@ const updateProduct = async (req, res) => {
             publisher = "",
             publishedYear = "",
             pages = "",
-            stock = 0
+            stock = 0,
+            sku = "",
+            oldPrice = 0
         } = req.body;
 
         let updateData = {
             name: String(name),
             description: String(description),
-            category: String(category),
+            category: category, // Sử dụng trực tiếp ObjectId
             price: Number(price) || 0,
+            oldPrice: Number(oldPrice) || null,
             popular: popular === "true" || popular === true,
             newArrivals: newArrivals === "true" || newArrivals === true,
             author: String(author || ""),
             publisher: String(publisher || ""),
             publishedYear: publishedYear ? Number(publishedYear) : null,
             pages: pages ? Number(pages) : null,
-            stock: Number(stock) || 0
+            stock: Number(stock) || 0,
+            sku: String(sku || "")
         };
 
         // Chỉ cập nhật hình ảnh nếu có file mới được tải lên
@@ -236,6 +245,15 @@ const updateProduct = async (req, res) => {
             try {
                 const uploadResult = await cloudinary.uploader.upload(req.file.path, { resource_type: "image" });
                 updateData.image = uploadResult.secure_url;
+                
+                // Thêm ảnh mới vào danh sách images
+                const product = await productModel.findById(id);
+                if (product) {
+                    if (!product.images) product.images = [];
+                    updateData.images = [...product.images, uploadResult.secure_url];
+                } else {
+                    updateData.images = [uploadResult.secure_url];
+                }
             } catch (uploadError) {
                 console.error("Lỗi khi tải lên hình ảnh:", uploadError);
                 // Tiếp tục với dữ liệu khác nếu tải lên thất bại
@@ -306,10 +324,26 @@ const updateStock = async (req, res) => {
 // Lấy thông tin tồn kho của tất cả sản phẩm
 const getInventory = async (req, res) => {
     try {
-        const products = await productModel.find({}, 'name image category stock price');
+        // Sử dụng populate thay vì aggregate để đơn giản hơn
+        const products = await productModel.find({})
+            .populate('category', 'name') // Sử dụng populate để lấy thông tin chi tiết của danh mục
+            .select('name images category stock price sku oldPrice');
+        
+        // Chuyển đổi dữ liệu để tương thích với cả hai định dạng
+        const formattedProducts = products.map(product => {
+            const productObj = product.toObject();
+            
+            // Thêm trường categoryName cho dễ truy cập
+            if (product.category && typeof product.category === 'object') {
+                productObj.categoryName = product.category.name;
+            }
+            
+            return productObj;
+        });
+            
         res.json({ 
             success: true, 
-            inventory: products 
+            inventory: formattedProducts 
         });
     } catch (error) {
         console.error("Lỗi khi lấy thông tin tồn kho:", error);

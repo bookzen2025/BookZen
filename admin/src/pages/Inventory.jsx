@@ -35,15 +35,23 @@ const Inventory = ({ token }) => {
     
     try {
       setLoading(true);
+      console.log("Đang gọi API lấy thông tin tồn kho...");
       const response = await axios.get(
         `${backend_url}/api/product/inventory`,
         { headers: { Authorization: token } }
       );
       
+      console.log("Kết quả API tồn kho:", response.data);
+      
       if (response.data.success) {
         const productsData = response.data.inventory;
         setProducts(productsData);
         setFilteredProducts(productsData);
+        
+        // Kiểm tra cấu trúc sản phẩm
+        if (productsData.length > 0) {
+          console.log("Cấu trúc sản phẩm mẫu:", productsData[0]);
+        }
         
         // Tính toán thống kê
         const totalProducts = productsData.length;
@@ -84,6 +92,11 @@ const Inventory = ({ token }) => {
     fetchCategories();
   }, [token]);
 
+  // Khi giá trị category filter thay đổi, in thông tin để debug
+  useEffect(() => {
+    console.log("Bộ lọc danh mục hiện tại:", categoryFilter);
+  }, [categoryFilter]);
+
   // Lọc sản phẩm khi searchTerm hoặc filters thay đổi
   useEffect(() => {
     if (!products.length) return;
@@ -102,7 +115,23 @@ const Inventory = ({ token }) => {
     
     // Lọc theo danh mục
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(product => product.category?._id === categoryFilter);
+      console.log("Lọc theo danh mục:", categoryFilter);
+      
+      // Tìm tên danh mục dựa vào ID trong bộ lọc
+      const selectedCategory = categories.find(cat => cat._id === categoryFilter);
+      if (selectedCategory && selectedCategory.name) {
+        const categoryName = selectedCategory.name;
+        console.log("Tên danh mục cần lọc:", categoryName);
+        
+        filtered = filtered.filter(product => {
+          // Lấy tên danh mục của sản phẩm
+          const productCategoryName = getCategoryName(product);
+          console.log(`So sánh: "${productCategoryName}" với "${categoryName}"`);
+          
+          // So sánh trực tiếp với tên danh mục
+          return productCategoryName === categoryName;
+        });
+      }
     }
     
     // Lọc theo tình trạng tồn kho
@@ -120,8 +149,9 @@ const Inventory = ({ token }) => {
       }
     }
     
+    console.log("Sản phẩm sau khi lọc:", filtered.length);
     setFilteredProducts(filtered);
-  }, [searchTerm, categoryFilter, stockFilter, products]);
+  }, [searchTerm, categoryFilter, stockFilter, products, categories]);
 
   const handleUpdateStock = async (e) => {
     e.preventDefault();
@@ -184,6 +214,28 @@ const Inventory = ({ token }) => {
     if (stock === 0) return 'Hết hàng';
     if (stock <= 10) return 'Sắp hết';
     return 'Còn hàng';
+  };
+
+  // Hàm để lấy tên danh mục, hỗ trợ cả định dạng cũ và mới
+  const getCategoryName = (product) => {
+    if (!product) return 'Chưa phân loại';
+    
+    // Ưu tiên dùng categoryName từ API mới
+    if (product.categoryName) {
+      return product.categoryName;
+    }
+    
+    // Trường hợp category là object (sau khi populate)
+    if (product.category && typeof product.category === 'object' && product.category.name) {
+      return product.category.name;
+    }
+    
+    // Trường hợp category là string (định dạng cũ)
+    if (product.category && typeof product.category === 'string') {
+      return product.category;
+    }
+    
+    return 'Chưa phân loại';
   };
 
   return (
@@ -290,7 +342,10 @@ const Inventory = ({ token }) => {
 
         <select 
           value={categoryFilter} 
-          onChange={(e) => setCategoryFilter(e.target.value)}
+          onChange={(e) => {
+            console.log("Đã chọn danh mục:", e.target.value);
+            setCategoryFilter(e.target.value);
+          }}
           className="px-4 py-2 border border-gray-10 rounded-button focus:outline-none focus:ring-2 focus:ring-secondary/50"
         >
           <option value="all">Tất cả danh mục</option>
@@ -331,7 +386,7 @@ const Inventory = ({ token }) => {
                 <div>
                   <h4 className="font-medium">{editingProduct.name}</h4>
                   <p className="text-small text-textSecondary">
-                    {editingProduct.category?.name || 'Chưa phân loại'} · SKU: {editingProduct.sku || 'N/A'}
+                    {getCategoryName(editingProduct)} · SKU: {editingProduct.sku || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -428,7 +483,7 @@ const Inventory = ({ token }) => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {product.category?.name || 'Chưa phân loại'}
+                      {getCategoryName(product)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{currency}{product.price.toLocaleString('vi-VN')}</div>
