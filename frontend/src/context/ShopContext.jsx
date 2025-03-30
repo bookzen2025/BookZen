@@ -305,12 +305,12 @@ const ShopContextProvider = (props) => {
         setPromoError(null)
 
         try {
-            const response = await axios.post('/api/promotions/validate', {
+            const response = await axios.post(backendUrl + '/api/promotion/validate', {
                 code,
                 cartTotal
             })
 
-            if (response.data.valid) {
+            if (response.data.success) {
                 setActivePromotion(response.data.promotion)
                 setDiscountAmount(response.data.discountAmount)
                 setPromoError(null)

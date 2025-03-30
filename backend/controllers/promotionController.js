@@ -231,7 +231,10 @@ export const getPromotionById = async (req, res) => {
 // Kiểm tra mã khuyến mãi hợp lệ
 export const validatePromoCode = async (req, res) => {
     try {
-        const { code, orderValue } = req.body;
+        const { code, orderValue, cartTotal } = req.body;
+        
+        // Sử dụng cartTotal nếu có, ngược lại sử dụng orderValue
+        const orderAmount = cartTotal || orderValue;
         
         if (!code) {
             return res.status(400).json({
@@ -268,7 +271,7 @@ export const validatePromoCode = async (req, res) => {
         }
         
         // Kiểm tra giá trị đơn hàng tối thiểu
-        if (orderValue && orderValue < promotion.minOrderValue) {
+        if (orderAmount && orderAmount < promotion.minOrderValue) {
             return res.status(400).json({
                 success: false,
                 message: `Giá trị đơn hàng phải từ ${promotion.minOrderValue} để áp dụng mã này`
@@ -279,7 +282,7 @@ export const validatePromoCode = async (req, res) => {
         let discountAmount = 0;
         
         if (promotion.discountType === 'percentage') {
-            discountAmount = (orderValue * promotion.discountValue) / 100;
+            discountAmount = (orderAmount * promotion.discountValue) / 100;
             
             // Áp dụng giới hạn giảm giá tối đa nếu có
             if (promotion.maxDiscountAmount && discountAmount > promotion.maxDiscountAmount) {
