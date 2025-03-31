@@ -11,6 +11,7 @@ const orderSchema = new mongoose.Schema({
     transactionId:{type:String}, // New field for bank transfer reference
     date:{type:Number, required:true},
     promoCode:{type:String}, // Mã khuyến mãi được áp dụng
+    shippingFee:{type:Number, default: 50000}, // Phí vận chuyển: mặc định là 50.000 (ngoại thành)
 })
 
 const orderModel = mongoose.models.order || mongoose.model('order', orderSchema)

@@ -4,7 +4,16 @@ import productModel from "../models/productModel.js"
 
 // Global variables for payment
 const currency = 'usd'
-const deliveryCharges = 120000
+
+// Hàm tính phí vận chuyển dựa trên tỉnh/thành phố
+const calculateDeliveryCharges = (province) => {
+    // Nếu là Hà Nội thì phí vận chuyển là 30.000 (nội thành)
+    if (province === 'Hà Nội') {
+        return 30000
+    }
+    // Nếu không phải Hà Nội hoặc không có thông tin tỉnh/thành phố thì phí vận chuyển là 50.000 (ngoại thành)
+    return 50000
+}
 
 // Hàm để cập nhật tồn kho khi đặt hàng
 const updateStockForOrder = async (items, increase = false) => {
@@ -33,7 +42,7 @@ const updateStockForOrder = async (items, increase = false) => {
 // Place order using Cash on Delivery
 const placeOrder = async (req, res) => {
     try {
-        const { userId, items, amount, address, promoCode } = req.body
+        const { userId, items, amount, address, promoCode, shippingFee } = req.body
 
         // Kiểm tra tồn kho trước khi đặt hàng
         let insufficientStock = [];
@@ -63,6 +72,9 @@ const placeOrder = async (req, res) => {
             });
         }
 
+        // Tính phí vận chuyển nếu không được cung cấp
+        const deliveryCharges = shippingFee || calculateDeliveryCharges(address.province)
+
         const orderData = {
             userId,
             items,
@@ -71,7 +83,8 @@ const placeOrder = async (req, res) => {
             paymentMethod: "COD",
             payment: false,
             date: Date.now(),
-            promoCode
+            promoCode,
+            shippingFee: deliveryCharges
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()
@@ -92,7 +105,7 @@ const placeOrder = async (req, res) => {
 // Place order using Bank Transfer
 const placeBankTransfer = async (req, res) => {
     try {
-        const { userId, items, amount, address, promoCode } = req.body
+        const { userId, items, amount, address, promoCode, shippingFee } = req.body
 
         // Kiểm tra tồn kho trước khi đặt hàng
         let insufficientStock = [];
@@ -122,6 +135,9 @@ const placeBankTransfer = async (req, res) => {
             });
         }
 
+        // Tính phí vận chuyển nếu không được cung cấp
+        const deliveryCharges = shippingFee || calculateDeliveryCharges(address.province)
+
         const orderData = {
             userId,
             items,
@@ -130,7 +146,8 @@ const placeBankTransfer = async (req, res) => {
             paymentMethod: "Bank Transfer",
             payment: false,
             date: Date.now(),
-            promoCode
+            promoCode,
+            shippingFee: deliveryCharges
         }
         const newOrder = new orderModel(orderData)
         await newOrder.save()

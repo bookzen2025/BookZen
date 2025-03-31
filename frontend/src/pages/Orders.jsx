@@ -499,6 +499,24 @@ const Orders = () => {
                           </tbody>
                           <tfoot className="bg-primary/5">
                             <tr>
+                              <th scope="row" colSpan="3" className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                                Phí vận chuyển ({order.address?.province === 'Hà Nội' ? 'Nội thành' : 'Ngoại thành'})
+                              </th>
+                              <td className="px-6 py-3 text-right text-sm font-medium text-secondary">
+                                {currency}{(order.shippingFee || 50000).toLocaleString('vi-VN')}
+                              </td>
+                            </tr>
+                            {order.promoCode && (
+                              <tr>
+                                <th scope="row" colSpan="3" className="px-6 py-3 text-left text-sm font-medium text-green-600">
+                                  Mã khuyến mãi: {order.promoCode}
+                                </th>
+                                <td className="px-6 py-3 text-right text-sm font-medium text-green-600">
+                                  Đã áp dụng
+                                </td>
+                              </tr>
+                            )}
+                            <tr>
                               <th scope="row" colSpan="3" className="px-6 py-3 text-right text-sm font-medium text-gray-500">
                                 Tổng cộng
                               </th>

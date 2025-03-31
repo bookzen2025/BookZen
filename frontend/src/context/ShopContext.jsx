@@ -15,7 +15,6 @@ const getDefaultCart = () => {
 const ShopContextProvider = (props) => {
 
     const currency = '₫'
-    const delivery_charges = 120000
     const backendUrl = import.meta.env.VITE_BACKEND_URL
     const navigate = useNavigate()
     const [books, setBooks] = useState([])
@@ -33,6 +32,17 @@ const ShopContextProvider = (props) => {
     const [promoError, setPromoError] = useState('')
     const [promoLoading, setPromoLoading] = useState(false)
     const [wishlistLoaded, setWishlistLoaded] = useState(false)
+    const [selectedProvince, setSelectedProvince] = useState('')
+
+    // Tính phí vận chuyển dựa trên tỉnh/thành phố
+    const calculateDeliveryCharges = (province) => {
+        // Nếu là Hà Nội thì phí vận chuyển là 30.000 (nội thành)
+        if (province === 'Hà Nội') {
+            return 30000
+        }
+        // Nếu không phải Hà Nội hoặc không có thông tin tỉnh/thành phố thì phí vận chuyển là 50.000 (ngoại thành)
+        return 50000
+    }
 
     // Hàm helper để lấy tên danh mục từ ID
     const getCategoryName = (categoryId) => {
@@ -686,7 +696,7 @@ const ShopContextProvider = (props) => {
         getCartAmount, 
         getFinalAmount,
         updateQuantity, 
-        delivery_charges, 
+        calculateDeliveryCharges,
         backendUrl,
         registerUser,
         loginUser,
@@ -710,7 +720,9 @@ const ShopContextProvider = (props) => {
         handleGoogleCallback,
         categories,
         getCategoryName,
-        fetchCategories
+        fetchCategories,
+        selectedProvince,
+        setSelectedProvince
     }
 
     return (

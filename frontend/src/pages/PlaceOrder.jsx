@@ -132,20 +132,24 @@ const PlaceOrder = () => {
     setCartItems, 
     getCartAmount, 
     getFinalAmount, 
-    delivery_charges, 
+    calculateDeliveryCharges, 
     backendUrl, 
     currency, 
     activePromotion,
     discountAmount,
-    applyPromotion 
+    applyPromotion,
+    setSelectedProvince 
   } = useContext(ShopContext)
   const { isAuthenticated, user } = useAuth()
   const [method, setMethod] = useState('cod')
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderInfo, setOrderInfo] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedProvince, setSelectedProvince] = useState('')
+  const [selectedProvince, setLocalSelectedProvince] = useState('')
   const [districts, setDistricts] = useState([])
+  
+  // Tính phí vận chuyển dựa trên tỉnh/thành phố đã chọn
+  const delivery_charges = calculateDeliveryCharges(selectedProvince)
   
   // Hàm trợ giúp điều hướng sang trang orders
   const navigateToOrders = () => {
@@ -167,12 +171,13 @@ const PlaceOrder = () => {
       const province = vietnamProvinces.find(p => p.name === watchProvince);
       if (province) {
         setDistricts(province.districts);
+        setLocalSelectedProvince(province.name);
         setSelectedProvince(province.name);
         // Reset district when province changes
         setValue('district', '');
       }
     }
-  }, [watchProvince, setValue]);
+  }, [watchProvince, setValue, setSelectedProvince]);
 
   // Pre-fill form with user data if available
   useEffect(() => {
@@ -218,6 +223,9 @@ const PlaceOrder = () => {
         }
       }
       
+      // Tính phí vận chuyển dựa trên tỉnh/thành phố đã chọn
+      const shippingFee = calculateDeliveryCharges(formData.province)
+      
       // Transform form data to fit backend expectations
       const addressData = {
         fullName: formData.fullName,
@@ -231,8 +239,9 @@ const PlaceOrder = () => {
       let orderData = {
         address: addressData,
         items: orderItems,
-        amount: getFinalAmount() + delivery_charges,
-        promoCode: activePromotion ? activePromotion.code : null
+        amount: getFinalAmount() + shippingFee,
+        promoCode: activePromotion ? activePromotion.code : null,
+        shippingFee: shippingFee
       }
 
       switch (method) {
@@ -280,7 +289,7 @@ const PlaceOrder = () => {
             // Lưu thông tin đơn hàng và hiển thị màn hình thanh toán
             setOrderInfo({
               orderId: responseBankTransfer.data.orderId,
-              amount: getFinalAmount() + delivery_charges,
+              amount: getFinalAmount() + shippingFee,
               items: orderItems,
               address: addressData
             })
@@ -368,7 +377,7 @@ const PlaceOrder = () => {
                 
                 <div className='flex justify-between border-b pb-2 mb-2'>
                   <span>Phí vận chuyển</span>
-                  <span>{currency}{delivery_charges.toLocaleString('vi-VN')}</span>
+                  <span>{currency}{shippingFee.toLocaleString('vi-VN')}</span>
                 </div>
                 
                 <div className='flex justify-between font-bold'>
