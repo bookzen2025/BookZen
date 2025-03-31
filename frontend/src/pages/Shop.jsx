@@ -5,13 +5,10 @@ import Title from '../components/Title'
 import { ShopContext } from '../context/ShopContext'
 import Item from '../components/Item'
 import Footer from '../components/Footer'
-import axios from 'axios'
 
 const Shop = () => {
 
-  const { books } = useContext(ShopContext)
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
-  const [categories, setCategories] = useState([])
+  const { books, categories, fetchCategories } = useContext(ShopContext)
   const [category, setCategory] = useState([])
   const [sortType, setSortType] = useState("relevant")
   const [filteredBooks, setFilteredBooks] = useState([])
@@ -20,25 +17,10 @@ const Shop = () => {
   const itemsPerPage = 10 // Number of books per page
   const [loading, setLoading] = useState(false)
 
-  // Hàm lấy danh mục từ API
-  const fetchCategories = async () => {
-    try {
-      setLoading(true)
-      const response = await axios.get(`${backendUrl}/api/category/list`)
-      if (response.data.success) {
-        setCategories(response.data.categories)
-      } else {
-        console.error("Không thể tải danh sách danh mục")
-      }
-    } catch (error) {
-      console.error("Error fetching categories:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Đảm bảo danh mục được tải
   useEffect(() => {
-    fetchCategories()
+    setLoading(true)
+    fetchCategories().finally(() => setLoading(false))
   }, [])
 
   const toggleFilter = (value, setState) => {
@@ -106,11 +88,11 @@ const Shop = () => {
             ) : categories.length > 0 ? (
               categories.map((cat) => (
                 <label key={cat._id}>
-                  <input value={cat.name} onChange={(e) => toggleFilter(e.target.value, setCategory)} type="checkbox" className='hidden peer' />
+                  <input value={cat._id} onChange={(e) => toggleFilter(e.target.value, setCategory)} type="checkbox" className='hidden peer' />
                   <div className='flexCenter flex-col gap-2 peer-checked:text-secondaryOne cursor-pointer'>
                     <div className='bg-primary h-20 w-20 flexCenter rounded-full'>
                       {cat.image ? (
-                        <img src={`${backendUrl}${cat.image}`} alt={cat.name} className='object-cover h-12 w-12' />
+                        <img src={`${cat.image}`} alt={cat.name} className='object-cover h-12 w-12' />
                       ) : (
                         <div className='h-10 w-10 flexCenter text-lg font-medium'>
                           {cat.name.charAt(0).toUpperCase()}

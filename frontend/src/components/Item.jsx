@@ -4,8 +4,7 @@ import { ShopContext } from '../context/ShopContext'
 import { Link } from 'react-router-dom'
 
 const Item = ({book}) => {
-
-    const {currency, addToCart} = useContext(ShopContext)
+    const {currency, addToCart, getCategoryName} = useContext(ShopContext)
 
   return (
     <div>
@@ -24,7 +23,7 @@ const Item = ({book}) => {
                     </span>
                 </div>
                 <div className='flexBetween pt-1'>
-                    <p className='font-bold capitalize'>{book.category}</p>
+                    <p className='font-bold capitalize'>{getCategoryName(book.category)}</p>
                     <h5 className='h5 text-secondaryOne pr-2'>{currency}{book.price.toLocaleString('vi-VN')}</h5>
                 </div>
                 <p className='line-clamp-2 py-1'>{book.description}</p>

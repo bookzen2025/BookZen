@@ -66,8 +66,8 @@ const Products = ({ token }) => {
         const response = await axios.get(`${backend_url}/api/category/list`)
         if (response.data.success && response.data.categories.length > 0) {
           setCategories(response.data.categories)
-          // Đặt danh mục mặc định là danh mục đầu tiên
-          setCategory(response.data.categories[0].name)
+          // Đặt danh mục mặc định là ID của danh mục đầu tiên thay vì tên
+          setCategory(response.data.categories[0]._id)
         } else {
           toast.warning("Không có danh mục nào. Vui lòng tạo danh mục trước khi thêm sản phẩm.")
         }
@@ -90,7 +90,7 @@ const Products = ({ token }) => {
         product => 
           product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           product.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchTerm.toLowerCase())
+          (typeof product.category === 'string' && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
       )
       setDisplayProducts(filteredProducts)
     }
@@ -186,7 +186,9 @@ const Products = ({ token }) => {
     setName(product.name)
     setDescription(product.description)
     setPrice(product.price)
-    setCategory(product.category)
+    // Tìm ID danh mục dựa trên tên
+    const categoryObj = categories.find(cat => cat.name === product.category)
+    setCategory(categoryObj?._id || '')
     setPopular(product.popular || false)
     setNewArrivals(product.newArrivals || false)
     setAuthor(product.author || '')
@@ -239,6 +241,12 @@ const Products = ({ token }) => {
     }
   }
 
+  // Thêm hàm helper để lấy tên danh mục từ ID
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat._id === categoryId);
+    return category ? category.name : categoryId;
+  };
+
   // Form thêm/sửa sản phẩm
   const renderProductForm = () => (
     <Card title={editMode ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}>
@@ -268,7 +276,7 @@ const Products = ({ token }) => {
                 required
               >
                 {categories.map((cat, index) => (
-                  <option key={index} value={cat.name}>{cat.name}</option>
+                  <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
               </select>
             </div>
@@ -516,7 +524,7 @@ const Products = ({ token }) => {
                     </td>
                     <td className="py-3 px-4">
                       <span className="px-2 py-1 bg-secondary/10 text-secondary rounded-full text-small">
-                        {product.category}
+                        {typeof product.category === 'string' ? getCategoryName(product.category) : product.category}
                       </span>
                     </td>
                     <td className="py-3 px-4 font-medium">{currency}{Number(product.price).toLocaleString('vi-VN')}</td>

@@ -19,6 +19,7 @@ const ShopContextProvider = (props) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL
     const navigate = useNavigate()
     const [books, setBooks] = useState([])
+    const [categories, setCategories] = useState([])
     const [token, setToken] = useState("")
     const [refreshToken, setRefreshToken] = useState("")
     const [user, setUser] = useState(null)
@@ -32,6 +33,25 @@ const ShopContextProvider = (props) => {
     const [promoError, setPromoError] = useState('')
     const [promoLoading, setPromoLoading] = useState(false)
     const [wishlistLoaded, setWishlistLoaded] = useState(false)
+
+    // Hàm helper để lấy tên danh mục từ ID
+    const getCategoryName = (categoryId) => {
+        if (!categoryId) return "";
+        const category = categories.find(cat => cat._id === categoryId);
+        return category ? category.name : categoryId;
+    };
+
+    // Lấy danh sách danh mục
+    const fetchCategories = async () => {
+        try {
+            const response = await axios.get(`${backendUrl}/api/category/list`)
+            if (response.data.success) {
+                setCategories(response.data.categories)
+            }
+        } catch (error) {
+            console.error("Error fetching categories:", error)
+        }
+    }
 
     // Initialize authentication state from storage
     useEffect(() => {
@@ -481,6 +501,7 @@ const ShopContextProvider = (props) => {
             getUserCart(localStorage.getItem('token'))
         }
         getProductsData()
+        fetchCategories()
     }, [])
 
     // Wishlist Methods
@@ -688,7 +709,10 @@ const ShopContextProvider = (props) => {
         validatePromoCode,
         clearPromotion,
         applyPromotion,
-        handleGoogleCallback
+        handleGoogleCallback,
+        categories,
+        getCategoryName,
+        fetchCategories
     }
 
     return (
