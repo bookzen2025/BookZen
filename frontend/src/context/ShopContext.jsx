@@ -78,15 +78,13 @@ const ShopContextProvider = (props) => {
             const response = await authService.register(userData)
             
             if (response.success) {
-                setToken(response.token)
-                setRefreshToken(response.refreshToken)
-                setUser(response.user)
-                
-                localStorage.setItem('token', response.token)
-                localStorage.setItem('refreshToken', response.refreshToken)
-                localStorage.setItem('user', JSON.stringify(response.user))
-                
-                return { success: true }
+                // Không lưu token và thông tin người dùng khi đăng ký thành công
+                // Chỉ trả về kết quả thành công và thông tin người dùng để hiển thị
+                return { 
+                    success: true,
+                    user: response.user,
+                    message: 'Đăng ký thành công! Vui lòng đăng nhập với tài khoản của bạn.'
+                }
             } else {
                 setAuthError(response.message)
                 toast.error(response.message)

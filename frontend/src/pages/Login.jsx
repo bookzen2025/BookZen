@@ -8,6 +8,7 @@ import { useContext } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import { FcGoogle } from "react-icons/fc";
+import { toast } from "react-toastify";
 
 // Schema for login form
 const loginSchema = yup.object().shape({
@@ -43,6 +44,7 @@ const Login = () => {
   const [currState, setCurrState] = useState('Login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   
   // Set up form validation based on current state
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
@@ -64,7 +66,17 @@ const Login = () => {
   // Handle form submission
   const onSubmit = async (data) => {
     if (currState === "Sign Up") {
-      await registerUser(data);
+      const result = await registerUser(data);
+      if (result.success) {
+        // Đặt cờ thành công
+        setRegistrationSuccess(true);
+        // Hiển thị thông báo thành công
+        toast.success(result.message);
+        // Chuyển sang chế độ đăng nhập
+        setCurrState("Login");
+        // Reset form để người dùng có thể đăng nhập
+        reset();
+      }
     } else {
       await loginUser(data);
     }
@@ -172,6 +184,11 @@ const Login = () => {
           <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col items-center w-[90%] sm:max-w-md m-auto gap-y-5 text-gray-800'>
             <div className='w-full mb-4'>
               <h3 className='bold-36'>{currState}</h3>
+              {registrationSuccess && currState === "Login" && (
+                <div className="mt-2 text-green-500 text-sm">
+                  Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.
+                </div>
+              )}
               {authError && (
                 <div className="mt-2 text-red-500 text-sm">
                   {authError}
