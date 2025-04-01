@@ -291,7 +291,8 @@ const PlaceOrder = () => {
               orderId: responseBankTransfer.data.orderId,
               amount: getFinalAmount() + shippingFee,
               items: orderItems,
-              address: addressData
+              address: addressData,
+              shippingFee: shippingFee
             })
             setOrderPlaced(true)
           } else {
@@ -377,7 +378,7 @@ const PlaceOrder = () => {
                 
                 <div className='flex justify-between border-b pb-2 mb-2'>
                   <span>Phí vận chuyển</span>
-                  <span>{currency}{shippingFee.toLocaleString('vi-VN')}</span>
+                  <span>{currency}{orderInfo.shippingFee.toLocaleString('vi-VN')}</span>
                 </div>
                 
                 <div className='flex justify-between font-bold'>
